@@ -1,0 +1,73 @@
+version: "3.9"
+
+services:
+  db_users:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_USERS_DB:-users}
+      POSTGRES_USER: ${POSTGRES_USERS_USER:-logr}
+      POSTGRES_PASSWORD: ${POSTGRES_USERS_PASSWORD:-logr}
+    volumes:
+      - "db-users-data:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  db_logs:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_LOGS_DB:-logs}
+      POSTGRES_USER: ${POSTGRES_LOGS_USER:-logr}
+      POSTGRES_PASSWORD: ${POSTGRES_LOGS_PASSWORD:-logr}
+    volumes:
+      - "db-logs-data:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  server:
+    build:
+      context: ./api
+    restart: unless-stopped
+    depends_on:
+      db_users:
+        condition: service_healthy
+      db_logs:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-4000}
+      SECRET_KEY: ${SECRET_KEY:-change-me}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-change-me}
+      TURNSTILE_BYPASS: ${TURNSTILE_BYPASS:-false}
+      USERS_DATABASE_URL: "${USERS_DATABASE_URL:-postgres://${POSTGRES_USERS_USER:-logr}:${POSTGRES_USERS_PASSWORD:-logr}@db_users:5432/${POSTGRES_USERS_DB:-users}}"
+      LOGS_DATABASE_URL: "${LOGS_DATABASE_URL:-postgres://${POSTGRES_LOGS_USER:-logr}:${POSTGRES_LOGS_PASSWORD:-logr}@db_logs:5432/${POSTGRES_LOGS_DB:-logs}}"
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:5173}
+      API_BASE_URL: ${API_BASE_URL:-http://localhost:${PORT:-4000}}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+      PG_SSL: ${PG_SSL:-false}
+      PG_SSL_REJECT_UNAUTHORIZED: ${PG_SSL_REJECT_UNAUTHORIZED:-true}
+    ports:
+      - "${PORT:-4000}:${PORT:-4000}"
+
+  web:
+    build:
+      context: ./web
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:4000}
+        VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-0x4AAAAAACMfhNy4dpEna30X}
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "5173:80"
+
+volumes:
+  db-users-data:
+  db-logs-data:
