@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { Button } from '@heroui/react';
 import { AlertTriangle, Info, CheckCircle2, X } from 'lucide-react';
 
 const ConfirmContext = createContext(null);
@@ -73,9 +74,10 @@ export const ConfirmProvider = ({ children }) => {
       {children}
       {isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm animate-fade-in">
-          <button
-            className="absolute inset-0 cursor-default"
-            onClick={() => handleClose(false)}
+          <Button
+            variant="light"
+            onPress={() => handleClose(false)}
+            className="absolute inset-0 !min-w-0 !w-full !h-full !rounded-none !bg-transparent !p-0 cursor-default data-[hover=true]:!bg-transparent"
             aria-label="关闭"
           />
 
@@ -90,13 +92,15 @@ export const ConfirmProvider = ({ children }) => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-base font-bold text-white leading-snug">{config.title}</h3>
-                    <button
-                      onClick={() => handleClose(false)}
+                    <Button
+                      isIconOnly
+                      variant="light"
+                      onPress={() => handleClose(false)}
                       className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
                       aria-label="关闭"
                     >
                       <X size={16} />
-                    </button>
+                    </Button>
                   </div>
                   {config.message ? (
                     <p className="mt-2 text-sm text-zinc-300/85 leading-relaxed whitespace-pre-wrap">{config.message}</p>
@@ -106,18 +110,19 @@ export const ConfirmProvider = ({ children }) => {
             </div>
 
             <div className="relative px-5 pb-5 pt-3 flex items-center justify-end gap-3">
-              <button
-                onClick={() => handleClose(false)}
+              <Button
+                variant="light"
+                onPress={() => handleClose(false)}
                 className="px-4 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-white/10 transition-colors text-sm font-semibold"
               >
                 {config.cancelText}
-              </button>
-              <button
-                onClick={() => handleClose(true)}
+              </Button>
+              <Button
+                onPress={() => handleClose(true)}
                 className={`px-4 py-2 rounded-xl text-white shadow-lg transition-all active:scale-95 text-sm font-bold ${t.confirmBtn}`}
               >
                 {config.confirmText}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -125,3 +130,4 @@ export const ConfirmProvider = ({ children }) => {
     </ConfirmContext.Provider>
   );
 };
+

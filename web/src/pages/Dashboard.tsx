@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
+import { Button } from '@heroui/react';
 import { 
     Plus, Copy, Search, Trash2, Box, AlertTriangle, 
     Check, Loader2, Server, Ghost, Edit2, X, 
@@ -7,12 +8,17 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, Tooltip, ResponsiveContainer, XAxis } from 'recharts';
 import { useToast } from '../components/ui/Toast';
+import IssuesPanel from '../components/IssuesPanel';
+import { API_BASE_URL } from '../config/api';
+import { listProjectLogs, listProjects } from '../services/dashboardService';
+import { ApiError } from '../services/http';
+import { useI18n } from '../i18n';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.logr.run";
 const API_URL = `${API_BASE_URL}/dashboard`;
 
 export default function Dashboard({ token, onView, onAuthError }) {
     const toast = useToast();
+    const { t } = useI18n();
     const [projects, setProjects] = useState([]);
     const [activeProject, setActiveProject] = useState(null);
     const [logs, setLogs] = useState([]);
@@ -22,6 +28,7 @@ export default function Dashboard({ token, onView, onAuthError }) {
     const [newProjectName, setNewProjectName] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
     const [filterType, setFilterType] = useState("ALL");
+    const [mainTab, setMainTab] = useState('events');
     const [copySuccess, setCopySuccess] = useState(false);
     const [sortOrder, setSortOrder] = useState("desc"); 
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
@@ -150,6 +157,18 @@ export default function Dashboard({ token, onView, onAuthError }) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [filteredLogs, selectedLogIndex, onView]);
 
+    const runAuthorized = async (requestFn) => {
+        try {
+            return await requestFn();
+        } catch (error) {
+            if (error instanceof ApiError && error.isAuthError) {
+                onAuthError?.();
+                throw new Error('AUTH');
+            }
+            throw error;
+        }
+    };
+
     const authFetch = async (url, options = {}) => {
         const headers = { ...(options.headers || {}) };
         if (token) headers.Authorization = `Bearer ${token}`;
@@ -160,12 +179,8 @@ export default function Dashboard({ token, onView, onAuthError }) {
             throw new Error(`NETWORK:${e?.message || 'fetch failed'}`);
         }
         if (res.status === 401 || res.status === 403) {
-            if (onAuthError) onAuthError();
+            onAuthError?.();
             throw new Error('AUTH');
-        }
-        if (!res.ok) {
-            const raw = await res.text().catch(() => '');
-            throw new Error(raw || `HTTP_${res.status}`);
         }
         return res;
     };
@@ -173,16 +188,16 @@ export default function Dashboard({ token, onView, onAuthError }) {
     useEffect(() => {
         const fetchProjects = async () => {
             try {
-                const res = await authFetch(`${API_URL}/projects`);
-                const data = await res.json();
-                const list = data.projects || data.plugins || [];
+                const list = await runAuthorized(() => listProjects(token));
                 setProjects(list);
-                if (list.length > 0 && !activeProject) setActiveProject(list[0]);
+                if (list.length > 0) {
+                    setActiveProject((prev) => prev || list[0]);
+                }
             } catch (error) {
                 if (error.message !== 'AUTH') {
                     if (!networkToastShownRef.current) {
                         networkToastShownRef.current = true;
-                        toast.error(`无法连接到服务器（${API_BASE_URL}），请确认后端已启动或设置 VITE_API_BASE_URL`);
+                        toast.error(`无法连接到API服务器`);
                     }
                     console.error("Failed to load projects", error);
                 }
@@ -197,14 +212,13 @@ export default function Dashboard({ token, onView, onAuthError }) {
         const fetchLogs = async () => {
             setIsLoadingLogs(true);
             try {
-                const res = await authFetch(`${API_URL}/logs/${activeProject.id}`);
-                const data = await res.json();
-                setLogs(data.logs || []);
+                const nextLogs = await runAuthorized(() => listProjectLogs(activeProject.id, token));
+                setLogs(nextLogs);
             } catch (error) {
                 if (error.message !== 'AUTH') {
                     if (!networkToastShownRef.current) {
                         networkToastShownRef.current = true;
-                        toast.error(`无法连接到服务器（${API_BASE_URL}），请确认后端已启动或设置 VITE_API_BASE_URL`);
+                        toast.error(`无法连接到API服务器`);
                     }
                     console.error("Failed to load logs", error);
                 }
@@ -416,7 +430,7 @@ export default function Dashboard({ token, onView, onAuthError }) {
     };
 
     return (
-        <div className="flex flex-col md:flex-row min-h-full bg-[#0b0b12] w-full font-sans text-zinc-200">
+        <div className="page-shell flex flex-col md:flex-row min-h-full w-full font-sans text-zinc-200">
             
             <div className="w-full md:w-64 flex flex-col border-b md:border-b-0 md:border-r border-white/10 shrink-0 h-auto md:h-[calc(100vh-64px)] md:sticky md:top-0 z-20 bg-[#0b0b12]">
                 <div className="p-4 md:p-6 flex-1 flex flex-col min-h-0">
@@ -430,7 +444,7 @@ export default function Dashboard({ token, onView, onAuthError }) {
                              <div className="flex justify-center py-8"><Loader2 className="animate-spin text-zinc-700" size={16} /></div>
                         ) : (
                             projects.map(p => (
-                                <button
+                                <Button
                                     key={p.id}
                                     onClick={() => setActiveProject(p)}
                                     className={`w-full px-3 py-2.5 rounded-xl text-sm transition-all flex items-center gap-3 group relative ${activeProject?.id === p.id
@@ -440,7 +454,7 @@ export default function Dashboard({ token, onView, onAuthError }) {
                                 >
                                     <span className={`w-1.5 h-1.5 rounded-full transition-all ${activeProject?.id === p.id ? 'bg-emerald-400 scale-125' : 'bg-zinc-500 group-hover:bg-zinc-300'}`}></span>
                                     <span className="truncate flex-1 text-left">{p.name}</span>
-                                </button>
+                                </Button>
                             ))
                         )}
                     </div>
@@ -454,29 +468,28 @@ export default function Dashboard({ token, onView, onAuthError }) {
                                     onChange={e => setNewProjectName(e.target.value)}
                                     onKeyDown={e => e.key === 'Enter' && handleCreateProject()}
                                 />
-                                <button 
+                                <Button 
                                     onClick={handleCreateProject}
                                     className="p-2.5 rounded-xl bg-white/10 hover:bg-emerald-500/10 text-zinc-400 hover:text-emerald-300 transition border border-transparent hover:border-emerald-500/20"
                                 >
                                     <Plus size={14} />
-                                </button>
+                                </Button>
                             </div>
                     </div>
                 </div>
             </div>
 
             <div className="flex-1 bg-[#0b0b12] flex flex-col min-w-0 h-full relative overflow-y-auto">
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none fixed"></div>
                 
                 {activeProject ? (
-                    <div className="flex flex-col min-h-full relative z-10 pb-8">
+                    <div className="flex flex-col min-h-full relative pb-8">
                         <header className="px-4 py-4 md:px-8 md:py-6 flex flex-col xl:flex-row xl:items-center justify-between gap-6 shrink-0">
                             <div>
                                 <h1 className="text-2xl font-bold text-white tracking-tight mb-2 flex items-center gap-3">
                                     {activeProject.name}
-                                    <button onClick={(e) => openRenameModal(e, activeProject)} className="text-zinc-400 hover:text-white transition">
+                                    <Button onClick={(e) => openRenameModal(e, activeProject)} className="text-zinc-400 hover:text-white transition">
                                         <Edit2 size={16} />
-                                    </button>
+                                    </Button>
                                 </h1>
                                 <div className="flex items-center gap-4 text-xs text-zinc-400">
                                     <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition group" onClick={handleCopyToken}>
@@ -490,53 +503,65 @@ export default function Dashboard({ token, onView, onAuthError }) {
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <button 
+                                <Button 
                                     onClick={() => setRefreshTrigger(prev => prev + 1)}
                                     className="p-2.5 bg-[#0f0f16] text-zinc-400 hover:text-emerald-300 border border-white/10 hover:border-emerald-500/20 rounded-xl transition shadow-sm"
-                                    title="刷新日志"
+                                    title={t('dashboard.refreshLogs')}
                                 >
                                     <RefreshCw size={18} className={isLoadingLogs ? "animate-spin" : ""} />
-                                </button>
-                                <div className="flex bg-[#0f0f16] p-1 rounded-xl border border-white/10 shadow-sm">
+                                </Button>
+                                <div className="relative grid grid-cols-2 bg-[#0f0f16] p-1 rounded-xl border border-white/10 shadow-sm">
+                                    <span
+                                        aria-hidden="true"
+                                        className={`pointer-events-none absolute left-1 top-1 bottom-1 w-[calc(50%-0.25rem)] rounded-lg transition-all duration-300 ease-out ${
+                                            filterType === 'CRASH'
+                                                ? 'translate-x-full bg-red-500/10 shadow-[inset_0_0_0_1px_rgba(239,68,68,0.22)]'
+                                                : 'translate-x-0 bg-white/15 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]'
+                                        }`}
+                                    />
                                     {['ALL', 'CRASH'].map((type) => (
-                                        <button 
+                                        <Button 
                                             key={type} 
                                             onClick={() => setFilterType(type)} 
-                                            className={`px-4 py-2 text-xs font-bold rounded-lg transition flex items-center gap-2 ${filterType === type ? (type === 'CRASH' ? 'bg-red-500/10 text-red-300' : 'bg-white/15 text-white') : 'text-zinc-400 hover:text-zinc-200'}`}
+                                            className={`relative z-10 px-4 py-2 text-xs font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-2 ${
+                                                filterType === type
+                                                    ? (type === 'CRASH' ? 'text-red-300' : 'text-white')
+                                                    : 'text-zinc-400 hover:text-zinc-200'
+                                            }`}
                                         >
                                             {type === 'CRASH' && <AlertTriangle size={12} />}
-                                            {type === 'CRASH' ? '崩溃' : '所有日志'}
-                                        </button>
+                                            {type === 'CRASH' ? t('dashboard.crash') : t('dashboard.allLogs')}
+                                        </Button>
                                     ))}
                                 </div>
-                                <button 
+                                <Button 
                                     onClick={(e) => requestDelete(e, 'PROJECT', activeProject.id)}
                                     className="p-2.5 bg-[#0f0f16] text-zinc-400 hover:text-red-300 border border-white/10 hover:border-red-500/20 rounded-xl transition shadow-sm" 
                                 >
                                     <Trash2 size={18} />
-                                </button>
+                                </Button>
                             </div>
                         </header>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 px-4 md:px-8 mb-8 shrink-0">
                             <StatCardNew 
-                                title="日志" 
+                                title={t('dashboard.allLogs')} 
                                 value={logs.length} 
                                 trend={dailyStats.logTrend} 
                                 icon={<Box size={20} />}
                                 color="blue"
                             />
                             <StatCardNew 
-                                title="崩溃" 
+                                title={t('dashboard.crash')} 
                                 value={logs.filter(l => l.reason === 'CRASH').length} 
                                 trend={dailyStats.crashTrend} 
                                 icon={<AlertTriangle size={20} />}
                                 color="red"
                             />
-                            <div className="col-span-1 sm:col-span-2 md:col-span-1 bg-[#0f0f16] border border-white/10 rounded-2xl p-4 relative overflow-hidden flex flex-col justify-between group hover:border-white/15 transition h-[160px] md:h-auto">
-                                <div className="flex justify-between items-start mb-2 relative z-10">
+                            <div className="col-span-1 sm:col-span-2 md:col-span-1 page-card p-4 relative overflow-hidden flex flex-col justify-between hover:border-white/15 transition h-[160px] md:h-auto">
+                                <div className="flex justify-between items-start mb-2">
                                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">趋势</span>
-                                     <Activity size={16} className="text-emerald-500/50" />
+                                     <Activity size={16} className="text-zinc-500" />
                                 </div>
                                 <div className="absolute inset-0 top-8">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -564,6 +589,38 @@ export default function Dashboard({ token, onView, onAuthError }) {
                             </div>
                         </div>
 
+                        <div className="px-4 md:px-8 mb-4 shrink-0">
+                            <div className="relative grid grid-cols-2 bg-[#0f0f16] p-1 rounded-xl border border-white/10 shadow-sm w-fit">
+                                <span
+                                    aria-hidden="true"
+                                    className={`pointer-events-none absolute left-1 top-1 bottom-1 w-[calc(50%-0.25rem)] rounded-lg bg-white/15 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] transition-all duration-300 ease-out ${
+                                        mainTab === 'issues' ? 'translate-x-full' : 'translate-x-0'
+                                    }`}
+                                />
+                                <Button
+                                    onClick={() => setMainTab('events')}
+                                    className={`relative z-10 px-4 py-2 text-xs font-bold rounded-lg transition-colors duration-300 ${
+                                        mainTab === 'events' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
+                                    }`}
+                                >
+                                    {t('dashboard.events')}
+                                </Button>
+                                <Button
+                                    onClick={() => setMainTab('issues')}
+                                    className={`relative z-10 px-4 py-2 text-xs font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-2 ${
+                                        mainTab === 'issues' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
+                                    }`}
+                                >
+                                    <AlertTriangle size={12} /> {t('dashboard.issues')}
+                                </Button>
+                            </div>
+                        </div>
+
+                        {mainTab === 'issues' ? (
+                        <div className="px-4 md:px-8 flex-1 min-h-0 flex flex-col">
+                            <IssuesPanel token={token} activeProject={activeProject} onView={onView} onAuthError={onAuthError} />
+                        </div>
+                        ) : (
                         <div className="flex-1 px-4 md:px-8 min-h-0 flex flex-col">
                             <div className="bg-[#0f0f16] border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-xl min-h-[500px]">
                                 {selectedLogIds.size > 0 ? (
@@ -572,31 +629,31 @@ export default function Dashboard({ token, onView, onAuthError }) {
                                             <div className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded text-xs font-bold flex items-center gap-2">
                                                 <CheckSquare size={14} /> 已选择 {selectedLogIds.size} 项
                                             </div>
-                                            <button onClick={() => setSelectedLogIds(new Set())} className="text-xs text-zinc-300/80 hover:text-zinc-100 transition">取消选择</button>
+                                            <Button onClick={() => setSelectedLogIds(new Set())} className="text-xs text-zinc-300/80 hover:text-zinc-100 transition">取消选择</Button>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <button 
+                                            <Button 
                                                 onClick={() => handleBatchVisibility(true)}
                                                 disabled={isBatchProcessing}
                                                 className="px-3 py-1.5 bg-[#0b0b12] border border-white/15 hover:border-emerald-500/50 text-zinc-200/90 hover:text-emerald-300 rounded-lg text-xs transition flex items-center gap-2"
                                             >
                                                 <Globe size={14} /> 设为公开
-                                            </button>
-                                            <button 
+                                            </Button>
+                                            <Button 
                                                 onClick={() => handleBatchVisibility(false)}
                                                 disabled={isBatchProcessing}
                                                 className="px-3 py-1.5 bg-[#0b0b12] border border-white/15 hover:border-emerald-500/50 text-zinc-200/90 hover:text-emerald-300 rounded-lg text-xs transition flex items-center gap-2"
                                             >
                                                 <Lock size={14} /> 设为私有
-                                            </button>
+                                            </Button>
                                             <div className="w-px h-4 bg-white/10 mx-1"></div>
-                                            <button 
+                                            <Button 
                                                 onClick={handleBatchDelete}
                                                 disabled={isBatchProcessing}
                                                 className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs transition flex items-center gap-2 border border-red-500/20"
                                             >
                                                 <Trash2 size={14} /> 批量删除
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 ) : (
@@ -625,9 +682,9 @@ export default function Dashboard({ token, onView, onAuthError }) {
                                     <div className="min-w-[600px] md:min-w-[800px] flex flex-col flex-1">
                                         <div className="grid grid-cols-12 gap-4 px-4 py-3 md:px-6 bg-[#0b0b12] border-b border-white/10 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
                                             <div className="col-span-1 flex items-center">
-                                                <button onClick={toggleSelectAll} className="text-zinc-400 hover:text-zinc-200 transition">
+                                                <Button onClick={toggleSelectAll} className="text-zinc-400 hover:text-zinc-200 transition">
                                                     {filteredLogs.length > 0 && selectedLogIds.size === filteredLogs.length ? <CheckSquare size={14} /> : <Square size={14} />}
-                                                </button>
+                                                </Button>
                                             </div>
                                             <div className="col-span-2">状态</div>
                                             <div className="col-span-6">日志 ID / 类型</div>
@@ -655,9 +712,9 @@ export default function Dashboard({ token, onView, onAuthError }) {
                                                         }`}
                                                     >
                                                         <div className="col-span-1 flex items-center" onClick={(e) => e.stopPropagation()}>
-                                                            <button onClick={(e) => toggleSelectLog(e, log.id)} className={`transition ${selectedLogIds.has(log.id) ? 'text-emerald-400' : 'text-zinc-400 hover:text-zinc-200'}`}>
+                                                            <Button onClick={(e) => toggleSelectLog(e, log.id)} className={`transition ${selectedLogIds.has(log.id) ? 'text-emerald-400' : 'text-zinc-400 hover:text-zinc-200'}`}>
                                                                 {selectedLogIds.has(log.id) ? <CheckSquare size={14} /> : <Square size={14} />}
-                                                            </button>
+                                                            </Button>
                                                         </div>
                                                         <div className="col-span-2">
                                                             <StatusBadge type={log.reason} />
@@ -680,7 +737,7 @@ export default function Dashboard({ token, onView, onAuthError }) {
                                                         </div>
                                                         <div className="col-span-1 text-right">
                                                             <div className="flex items-center justify-end gap-1">
-                                                                <button
+                                                                <Button
                                                                     onClick={(e) => handleToggleLogVisibility(e, log)}
                                                                     disabled={visibilityUpdatingId === log.id}
                                                                     className={`p-2 rounded-lg transition opacity-0 group-hover:opacity-100 ${
@@ -691,23 +748,23 @@ export default function Dashboard({ token, onView, onAuthError }) {
                                                                     title={log.isPublic ? '设为私有' : '设为公开'}
                                                                 >
                                                                     {log.isPublic ? <Globe size={14} /> : <Lock size={14} />}
-                                                                </button>
+                                                                </Button>
                                                                 {log.isPublic && (
-                                                                    <button
+                                                                    <Button
                                                                         onClick={(e) => handleCopyLogLink(e, log)}
                                                                         className="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition opacity-0 group-hover:opacity-100"
                                                                         title="复制链接"
                                                                     >
                                                                         <Copy size={14} />
-                                                                    </button>
+                                                                    </Button>
                                                                 )}
-                                                                <button
+                                                                <Button
                                                                     onClick={(e) => requestDelete(e, 'LOG', log.id)} 
                                                                     className="p-2 text-zinc-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition opacity-0 group-hover:opacity-100"
                                                                     title="删除"
                                                                 >
                                                                     <Trash2 size={14} />
-                                                                </button>
+                                                                </Button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -725,6 +782,7 @@ export default function Dashboard({ token, onView, onAuthError }) {
                                 </div>
                             </div>
                         </div>
+                        )}
                     </div>
                 ) : (
                     <EmptyState />
@@ -738,8 +796,8 @@ export default function Dashboard({ token, onView, onAuthError }) {
                         <input className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-emerald-500 transition" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleRenameSubmit()} autoFocus />
                     </div>
                     <div className="flex justify-end gap-3 pt-2">
-                        <button onClick={() => setIsRenameModalOpen(false)} className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition">取消</button>
-                        <button onClick={handleRenameSubmit} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg transition">保存</button>
+                        <Button onClick={() => setIsRenameModalOpen(false)} className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition">取消</Button>
+                        <Button onClick={handleRenameSubmit} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg transition">保存</Button>
                     </div>
                 </div>
             </Modal>
@@ -757,8 +815,8 @@ export default function Dashboard({ token, onView, onAuthError }) {
                         </div>
                     </div>
                     <div className="flex justify-end gap-3">
-                        <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition">取消</button>
-                        <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-lg transition flex items-center gap-2"><Trash2 size={16} /> 删除</button>
+                        <Button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition">取消</Button>
+                        <Button onClick={confirmDelete} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-lg transition flex items-center gap-2"><Trash2 size={16} /> 删除</Button>
                     </div>
                 </div>
             </Modal>
@@ -769,33 +827,30 @@ export default function Dashboard({ token, onView, onAuthError }) {
 function StatCardNew({ title, value, trend, icon, color }) {
     const isRed = color === 'red';
     
-    let bgClass = 'bg-blue-500/10 text-blue-400';
-    let trendClass = 'bg-emerald-500/10 text-emerald-400';
-    let gradientClass = 'from-blue-500/5';
+    let bgClass = 'bg-white/5 text-zinc-200 border-white/10';
+    let trendClass = 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20';
     
     if (isRed) {
-        bgClass = 'bg-red-500/10 text-red-400';
-        trendClass = 'bg-red-500/10 text-red-400';
-        gradientClass = 'from-red-500/5';
+        bgClass = 'bg-red-500/10 text-red-300 border-red-500/20';
+        trendClass = 'bg-red-500/10 text-red-300 border-red-500/20';
     }
 
     return (
-        <div className="bg-[#0f0f16] border border-white/10 rounded-2xl p-4 sm:p-5 flex flex-col justify-between group hover:border-white/15 transition relative overflow-hidden">
-            <div className="flex justify-between items-start mb-4 relative z-10">
-                <div className={`p-2 rounded-xl ${bgClass}`}>
+        <div className="page-card p-4 sm:p-5 flex flex-col justify-between hover:border-white/15 transition">
+            <div className="flex justify-between items-start mb-4">
+                <div className={`p-2 rounded-xl border ${bgClass}`}>
                     {icon}
                 </div>
                 {trend && (
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${trendClass}`}>
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${trendClass}`}>
                         {trend}
                     </span>
                 )}
             </div>
-            <div className="relative z-10">
+            <div>
                 <div className="text-2xl sm:text-3xl font-bold text-white mb-1">{value}</div>
                 <div className="text-xs text-zinc-400 font-medium uppercase tracking-wider">{title}</div>
             </div>
-            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${gradientClass} to-transparent rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none`}></div>
         </div>
     )
 }
@@ -818,12 +873,10 @@ function StatusBadge({ type }) {
 function EmptyState() {
     return (
         <div className="flex-1 w-full flex flex-col items-center justify-center text-zinc-400 gap-8 relative overflow-hidden min-h-[calc(100vh-64px)]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-500/5 via-[#0b0b12] to-[#0b0b12] pointer-events-none"></div>
-            <div className="relative z-10 w-32 h-32 bg-[#0e0e11] rounded-3xl flex items-center justify-center border border-white/5 shadow-2xl rotate-3 transition hover:rotate-0 duration-500">
-                <Server size={48} className="text-emerald-500 opacity-80" />
-                <div className="absolute -inset-1 bg-gradient-to-br from-emerald-500/20 to-transparent blur-xl -z-10"></div>
+            <div className="w-28 h-28 bg-white/5 rounded-3xl flex items-center justify-center border border-white/10">
+                <Server size={44} className="text-zinc-300 opacity-80" />
             </div>
-            <div className="text-center z-10 max-w-sm px-4">
+            <div className="text-center max-w-sm px-4">
                 <h2 className="text-2xl font-bold text-white mb-3">欢迎使用控制台</h2>
                 <p className="text-sm text-zinc-400 leading-relaxed">
                     从侧边栏选择一个项目以开始监控应用日志，或创建一个新项目。
@@ -836,7 +889,7 @@ function EmptyState() {
 function CustomTooltip({ active, payload, label }) {
     if (active && payload && payload.length) {
         return (
-            <div className="bg-[#16161d] border border-zinc-700 p-2 rounded-lg shadow-xl">
+            <div className="bg-[#111119] border border-white/10 p-2 rounded-lg shadow-xl">
                 <p className="text-[10px] text-zinc-400 mb-1">{label}</p>
                 <p className="text-xs font-bold text-emerald-400">
                     {payload[0].value} 日志
@@ -852,13 +905,14 @@ function Modal({ isOpen, onClose, title, children }) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}></div>
-            <div className="relative w-full max-w-md bg-[#16161d] border border-zinc-700 rounded-2xl shadow-2xl p-6 animate-slide-up">
+            <div className="relative w-full max-w-md bg-[#111119] border border-white/10 rounded-2xl shadow-2xl p-6 animate-slide-up">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-bold text-white tracking-tight">{title}</h3>
-                    <button onClick={onClose} className="text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 p-1.5 rounded-lg transition-colors"><X size={18} /></button>
+                    <Button onClick={onClose} className="text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 p-1.5 rounded-lg transition-colors"><X size={18} /></Button>
                 </div>
                 <div>{children}</div>
             </div>
         </div>
     );
 }
+

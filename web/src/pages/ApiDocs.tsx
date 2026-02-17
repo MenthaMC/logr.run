@@ -3,10 +3,7 @@ import { Key, LayoutDashboard, FileText, Shield, Activity, Bug } from 'lucide-re
 
 export default function ApiDocs() {
     return (
-        <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-12 w-full fade-in pb-16 sm:pb-24 lg:pb-32 font-sans relative">
-            <div className="fixed top-20 right-0 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[128px] pointer-events-none -z-10"></div>
-            <div className="fixed bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[128px] pointer-events-none -z-10"></div>
-
+        <div className="page-shell max-w-5xl mx-auto p-4 sm:p-6 lg:p-12 w-full fade-in pb-16 sm:pb-24 lg:pb-32 font-sans relative">
             <div className="text-center mb-16 mt-8">
                 <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4 tracking-tight">
                     API 文档
@@ -30,7 +27,7 @@ export default function ApiDocs() {
                             支持 <code className="text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">multipart/form-data</code> (文件上传) 或 <code className="text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">application/json</code> (文本内容)。
                         </p>
 
-                        <div className="glass-card rounded-xl overflow-hidden border border-white/5 mb-8">
+                        <div className="page-card rounded-xl overflow-hidden mb-8">
                             <div className="bg-black/40 px-4 py-3 border-b border-white/5 flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-zinc-600"></div>
                                 <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">请求头</span>
@@ -48,7 +45,7 @@ export default function ApiDocs() {
                         </div>
 
                         <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4 pl-1">参数</h3>
-                        <div className="glass-card rounded-xl border border-white/5 overflow-hidden">
+                        <div className="page-card rounded-xl overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full min-w-[640px] text-sm text-left">
                                     <thead className="bg-black/40 text-zinc-500 font-medium border-b border-white/5">
@@ -155,7 +152,7 @@ export default function ApiDocs() {
                         <h2 className="text-2xl font-bold text-white">仪表盘 API</h2>
                     </div>
 
-                    <div className="glass-card p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 mb-8 flex items-start gap-3">
+                    <div className="page-card p-4 mb-8 flex items-start gap-3 border-emerald-500/20 bg-emerald-500/5">
                         <Key className="text-emerald-500 shrink-0 mt-0.5" size={18} />
                         <div>
                             <h3 className="text-sm font-bold text-emerald-400 mb-1">需要认证</h3>
@@ -289,7 +286,7 @@ function EndpointBadge({ method, path, color = "emerald" }) {
 
 function CodeBlock({ code }) {
     return (
-        <div className="glass-card rounded-xl border border-white/5 overflow-hidden group">
+        <div className="page-card rounded-xl overflow-hidden group">
             <div className="bg-[#0e0e11] p-4 overflow-x-auto custom-scrollbar">
                 <pre className="font-mono text-xs text-zinc-300 leading-relaxed">{code}</pre>
             </div>
@@ -316,7 +313,7 @@ function ApiCard({ method, path, desc, payload, color = "emerald" }) {
     };
 
     return (
-        <div className="glass-card p-5 rounded-xl border border-white/5 hover:border-white/10 transition-all">
+        <div className="page-card p-5 hover:border-white/10 transition-all">
             <div className="flex items-center gap-2 mb-3">
                 <span className={`${colors[color]} px-2 py-0.5 rounded text-[10px] font-bold border uppercase`}>{method}</span>
                 <code className="text-xs text-zinc-300 font-mono truncate" title={path}>{path}</code>

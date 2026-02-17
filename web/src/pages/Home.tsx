@@ -3,10 +3,10 @@ import {
   Upload, FileText, Terminal, X, Zap, AlertTriangle, Box, Shield, Code, Copy, Check,
   ArrowRight, Activity, Search, BarChart3
 } from 'lucide-react';
+import { Button } from '@heroui/react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.logr.run";
-const API_URL = `${API_BASE_URL}/logs`;
+import { API_BASE_URL } from '../config/api';
+import { uploadLogContent, uploadLogFile } from '../services/logService';
 
 const JAVA_CODE_RAW = `public void uploadLog(Path logFile, String reason) throws IOException {
     // 1. 读取文件
@@ -15,7 +15,7 @@ const JAVA_CODE_RAW = `public void uploadLog(Path logFile, String reason) throws
     // 2. 创建请求
     HttpClient client = HttpClient.newHttpClient();
     HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create("${API_URL}"))
+            .uri(URI.create("${API_BASE_URL}/logs"))
             .header("Content-Type", "application/json")
             .header("X-Backend-Token", "你的后端令牌") // 可选
             .POST(BodyPublishers.ofString("..."))
@@ -72,7 +72,13 @@ const Background = () => (
       transition={{ duration: 25, repeat: Infinity, ease: "linear", delay: 2 }}
       className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[100px]"
     />
-    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
+    <div
+      className="absolute inset-0 opacity-15 mix-blend-overlay"
+      style={{
+        backgroundImage: 'radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px)',
+        backgroundSize: '3px 3px'
+      }}
+    />
   </div>
 );
 
@@ -106,23 +112,9 @@ export default function Home({ onSuccess, onNav }) {
     setTerminalMessage(null);
     setLoading(true);
     try {
-      let res;
-      if (selectedFile) {
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-        formData.append('reason', 'MANUAL');
-        res = await fetch(API_URL, {
-          method: 'POST',
-          body: formData
-        });
-      } else {
-        res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content, reason: "MANUAL" })
-        });
-      }
-      const data = await res.json();
+      const data = selectedFile
+        ? await uploadLogFile(selectedFile, { reason: 'MANUAL' })
+        : await uploadLogContent(content, { reason: 'MANUAL' });
       if (data.success) {
         const previewContent = selectedFile && !isPreviewed ? "" : content;
         const viewId = data.shortId || data.id;
@@ -220,8 +212,7 @@ export default function Home({ onSuccess, onNav }) {
             </span>
           </h1>
           <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-            统一收集关键数据、实时分析、一键分享。支持多种格式，
-            <span className="text-emerald-400/80">毫秒级</span> 响应速度。
+            统一收集关键数据、实时分析、一键分享、支持多种格式
           </p>
         </motion.div>
 
@@ -248,14 +239,19 @@ export default function Home({ onSuccess, onNav }) {
                 <Terminal size={12} /> 
                 {selectedFile ? selectedFile.name : 'terminal'}
               </div>
-              <motion.button 
+              <motion.div
                 whileHover={{ scale: 1.1, rotate: 90 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={resetInput} 
-                className="text-zinc-500 hover:text-white transition"
               >
-                <X size={16} />
-              </motion.button>
+                <Button
+                  isIconOnly
+                  variant="light"
+                  onPress={resetInput}
+                  className="min-w-0 w-auto h-auto p-0 text-zinc-500 hover:text-white transition"
+                >
+                  <X size={16} />
+                </Button>
+              </motion.div>
             </div>
 
             {/* Text Area */}
@@ -299,31 +295,33 @@ export default function Home({ onSuccess, onNav }) {
 
                 <div className="flex gap-3 pointer-events-auto">
                     <input type="file" ref={fileInputRef} className="hidden" accept=".log,.txt,.gz" onChange={e => readFile(e.target.files[0])} />
-                    <motion.button 
+                    <motion.div
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => fileInputRef.current.click()} 
-                        className="px-4 py-2.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 rounded-xl flex items-center gap-2 border border-white/5 hover:border-white/10 transition font-medium text-sm backdrop-blur-md"
                     >
-                        <FileText size={16} /> 
-                        <span className="hidden sm:inline">选择文件</span>
-                    </motion.button>
-                    <motion.button 
+                        <Button
+                            variant="light"
+                            onPress={() => fileInputRef.current.click()}
+                            className="px-4 py-2.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 rounded-xl flex items-center gap-2 border border-white/5 hover:border-white/10 transition font-medium text-sm backdrop-blur-md"
+                            startContent={<FileText size={16} />}
+                        >
+                            <span className="hidden sm:inline">选择文件</span>
+                        </Button>
+                    </motion.div>
+                    <motion.div
                         whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(16, 185, 129, 0.4)" }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={handleUpload} 
-                        disabled={(!content.trim() && !selectedFile) || loading} 
-                        className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-900/20 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none text-sm group/btn"
                     >
-                        {loading ? (
-                            <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                            <>
-                                <Upload size={16} className="group-hover/btn:-translate-y-0.5 transition-transform" /> 
-                                上传日志
-                            </>
-                        )}
-                    </motion.button>
+                        <Button
+                            onPress={handleUpload}
+                            isDisabled={(!content.trim() && !selectedFile) || loading}
+                            isLoading={loading}
+                            className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-900/20 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none text-sm group/btn"
+                            startContent={!loading ? <Upload size={16} className="group-hover/btn:-translate-y-0.5 transition-transform" /> : null}
+                        >
+                            上传日志
+                        </Button>
+                    </motion.div>
                 </div>
             </div>
 
@@ -396,14 +394,15 @@ export default function Home({ onSuccess, onNav }) {
                         只需几十行代码，即可为您的程序集成自动日志上传功能。
                     </p>
                 </div>
-                <motion.button
-                    whileHover={{ x: 5 }}
-                    type="button"
-                    onClick={() => onNav?.('api')}
-                    className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-medium transition group"
-                >
-                    查看完整 API 文档 <ArrowRight size={16} />
-                </motion.button>
+                <motion.div whileHover={{ x: 5 }}>
+                    <Button
+                        variant="light"
+                        onPress={() => onNav?.('api')}
+                        className="min-w-0 h-auto p-0 flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-medium transition group"
+                    >
+                        查看完整 API 文档 <ArrowRight size={16} />
+                    </Button>
+                </motion.div>
             </div>
 
             <div className="glass-card rounded-xl overflow-hidden shadow-2xl border border-white/5">
@@ -415,8 +414,9 @@ export default function Home({ onSuccess, onNav }) {
                         </div>
                         <span className="text-xs font-mono text-zinc-500">Java HttpClient 示例</span>
                     </div>
-                    <button
-                        onClick={handleCopyCode}
+                    <Button
+                        variant="light"
+                        onPress={handleCopyCode}
                         className={`text-[10px] font-mono px-2 py-1 rounded flex items-center gap-1.5 transition-all ${codeCopied
                         ? 'bg-emerald-500/20 text-emerald-400'
                         : 'bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
@@ -424,7 +424,7 @@ export default function Home({ onSuccess, onNav }) {
                     >
                         {codeCopied ? <Check size={10} /> : <Copy size={10} />}
                         {codeCopied ? '已复制' : '复制'}
-                    </button>
+                    </Button>
                 </div>
                 <div className="p-6 bg-[#0c0c0e] overflow-x-auto">
                     <pre className="font-mono text-xs text-zinc-300 leading-relaxed">
@@ -469,23 +469,4 @@ function FeatureCard({ icon, title, desc, color, delay }) {
             </p>
         </motion.div>
     );
-}
-
-function Loader2({ className, size }) {
-    return (
-        <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width={size} 
-            height={size} 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            className={className}
-        >
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-        </svg>
-    )
 }

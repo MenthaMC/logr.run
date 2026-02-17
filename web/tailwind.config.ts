@@ -1,6 +1,12 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
+import type { Config } from 'tailwindcss';
+import { heroui } from '@heroui/react';
+
+const config: Config = {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,jsx,ts,tsx}",
+    "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
+  ],
   theme: {
     extend: {
       colors: {
@@ -12,8 +18,8 @@ module.exports = {
         'primary-hover': '#059669',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
+        sans: ['JetBrains Mono', 'Noto Sans SC', 'Fira Code', 'Cascadia Code', 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Source Han Sans SC', 'monospace'],
+        mono: ['JetBrains Mono', 'Noto Sans SC', 'Fira Code', 'Cascadia Code', 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Source Han Sans SC', 'monospace'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out forwards',
@@ -32,5 +38,7 @@ module.exports = {
       },
     },
   },
-  plugins: []
+  plugins: [heroui()]
 };
+
+export default config;

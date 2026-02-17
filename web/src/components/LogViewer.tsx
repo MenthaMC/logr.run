@@ -5,15 +5,19 @@ import {
   ArrowUpToLine, ArrowDownToLine, List, FileQuestion, RefreshCw, Home,
   Search, ExternalLink, ChevronUp, ChevronDown, Globe, Lock
 } from 'lucide-react';
+import { Button } from '@heroui/react';
 import { useToast } from './ui/Toast';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.logr.run";
-const API_URL = `${API_BASE_URL}/logs`;
+import { ApiError } from '../services/http';
+import { buildRawLogUrl, getLogDetail, getRawLogText, updateLogVisibility } from '../services/logService';
+import LogAnalysisPanel from './LogAnalysisPanel';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function LogViewer({ id, initialContent, onBack, token }) {
   const toast = useToast();
   const [content, setContent] = useState("");
   const [metadata, setMetadata] = useState(null);
+  const [analysis, setAnalysis] = useState(null);
+  const [showAnalysis, setShowAnalysis] = useState(true);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -76,32 +80,42 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
   const bottomSpacerHeight = isVirtualized ? (visibleLines.length - endIndex) * LINE_HEIGHT : 0;
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    const url = `${API_URL}/${id}`;
-    fetch(url, { headers })
-      .then(r => {
-        if (r.status === 403) throw new Error("RESTRICTED");
-        if (r.status === 404) throw new Error("日志不存在");
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then(d => { 
-        if (d.success) { 
-          if (d.content) {
-            setContent(d.content); 
-          }
-          setMetadata(d.metadata); 
-        } else {
-          throw new Error(d.error || "日志不存在");
+    let cancelled = false;
+
+    const loadLog = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const data = await getLogDetail(id, token);
+        if (!data?.success) {
+          throw new Error(data?.error || '日志不存在');
         }
-      })
-      .catch(err => {
+
+        if (cancelled) return;
+        setContent(data.content || initialContent || '');
+        setMetadata(data.metadata || null);
+        setAnalysis(data.analysis || null);
+      } catch (err) {
+        if (cancelled) return;
+
+        if (err instanceof ApiError) {
+          if (err.status === 403) setError('RESTRICTED');
+          else if (err.status === 404) setError('日志不存在');
+          else setError(`HTTP ${err.status}`);
+          return;
+        }
+
         setError(err.message);
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadLog();
+    return () => {
+      cancelled = true;
+    };
   }, [id, initialContent, token]);
 
   useEffect(() => {
@@ -195,14 +209,12 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
   const handleOpenRaw = async () => {
     try {
       const requestId = metadata?.id || id;
-      const rawUrl = `${API_URL}/${requestId}/raw`;
       if (!token) {
-        window.open(rawUrl, '_blank', 'noopener');
+        window.open(buildRawLogUrl(requestId), '_blank', 'noopener');
         return;
       }
-      const res = await fetch(rawUrl, { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const text = await res.text();
+
+      const text = await getRawLogText(requestId, token);
       const blob = new Blob([text], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank', 'noopener');
@@ -221,19 +233,7 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
     const nextIsPublic = !metadata?.isPublic;
     setVisibilitySaving(true);
     try {
-      const res = await fetch(`${API_URL}/${requestId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ isPublic: nextIsPublic })
-      });
-      if (!res.ok) {
-        if (res.status === 403) throw new Error('RESTRICTED');
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const data = await res.json();
+      const data = await updateLogVisibility(requestId, nextIsPublic, token);
       if (!data?.success) throw new Error(data?.error || '更新失败');
       if (data?.metadata) setMetadata((prev) => ({ ...prev, ...data.metadata }));
     } catch (err) {
@@ -326,12 +326,12 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
                 )}
             </p>
             <div className="flex gap-4 justify-center">
-                <button onClick={onBack} className="px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-medium transition flex items-center gap-2">
+                <Button onPress={onBack} className="px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-medium transition flex items-center gap-2">
                     <Home size={18} /> 返回首页
-                </button>
-                <button onClick={() => window.location.reload()} className="px-6 py-2.5 bg-white text-black hover:bg-zinc-200 rounded-xl font-medium transition flex items-center gap-2">
+                </Button>
+                <Button onPress={() => window.location.reload()} className="px-6 py-2.5 bg-white text-black hover:bg-zinc-200 rounded-xl font-medium transition flex items-center gap-2">
                     <RefreshCw size={18} /> 重试
-                </button>
+                </Button>
             </div>
         </div>
     </div>
@@ -346,9 +346,9 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
             <div className="flex flex-col md:flex-row md:items-center justify-between py-3 gap-4">
               
               <div className="flex items-center gap-3 sm:gap-4">
-                <button onClick={onBack} className="p-2.5 -ml-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors" title="返回">
+                <Button isIconOnly variant="light" onPress={onBack} className="p-2.5 -ml-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors" title="返回">
                   <ChevronLeft size={20} />
-                </button>
+                </Button>
                 
                 <div className="flex flex-col min-w-0">
                   <div className="flex items-center gap-3">
@@ -396,20 +396,35 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
                     {searchMatches.length ? `${matchIndex + 1}/${searchMatches.length}` : '0/0'}
                   </span>
                   <div className="flex gap-0.5">
-                    <button onClick={() => jumpToMatch(-1)} disabled={!searchMatches.length} className="p-0.5 rounded hover:bg-white/10 text-zinc-400 hover:text-white disabled:opacity-30"><ChevronUp size={12}/></button>
-                    <button onClick={() => jumpToMatch(1)} disabled={!searchMatches.length} className="p-0.5 rounded hover:bg-white/10 text-zinc-400 hover:text-white disabled:opacity-30"><ChevronDown size={12}/></button>
+                    <Button isIconOnly variant="light" onPress={() => jumpToMatch(-1)} isDisabled={!searchMatches.length} className="p-0.5 min-w-0 h-auto rounded hover:bg-white/10 text-zinc-400 hover:text-white disabled:opacity-30"><ChevronUp size={12}/></Button>
+                    <Button isIconOnly variant="light" onPress={() => jumpToMatch(1)} isDisabled={!searchMatches.length} className="p-0.5 min-w-0 h-auto rounded hover:bg-white/10 text-zinc-400 hover:text-white disabled:opacity-30"><ChevronDown size={12}/></Button>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <button onClick={() => setFilter('ALL')} className={getFilterStyle('ALL')}>全部</button>
-                  <button onClick={() => setFilter('ERROR')} className={getFilterStyle('ERROR')}>错误</button>
-                  <button onClick={() => setFilter('WARN')} className={getFilterStyle('WARN')}>警告</button>
+                  <Button variant="light" onPress={() => setFilter('ALL')} className={getFilterStyle('ALL')}>全部</Button>
+                  <Button variant="light" onPress={() => setFilter('ERROR')} className={getFilterStyle('ERROR')}>错误</Button>
+                  <Button variant="light" onPress={() => setFilter('WARN')} className={getFilterStyle('WARN')}>警告</Button>
                 </div>
 
                 <div className="flex items-center gap-2 ml-auto md:ml-0">
-                    <button 
-                    onClick={() => {
+                    <Button
+                      isIconOnly
+                      variant="light"
+                      onPress={() => setShowAnalysis(v => !v)}
+                      className={`p-2.5 rounded-lg border transition-all ${
+                        showAnalysis
+                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                          : "bg-white/5 hover:bg-white/10 text-zinc-300 border-white/10 hover:border-white/20"
+                      }`}
+                      title={showAnalysis ? "隐藏分析侧栏" : "显示分析侧栏"}
+                    >
+                      <Terminal size={16} />
+                    </Button>
+                    <Button
+                    isIconOnly
+                    variant="light"
+                    onPress={() => {
                         const next = !isWrap;
                         setIsWrap(next);
                         if (next) setShowWrapNotice(false);
@@ -418,12 +433,14 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
                     title={isWrap ? "关闭换行" : "开启换行"}
                     >
                     <WrapText size={16} />
-                    </button>
+                    </Button>
 
                     {token && metadata?.projectId && (
-                    <button
-                        onClick={handleToggleVisibility}
-                        disabled={visibilitySaving}
+                    <Button
+                        isIconOnly
+                        variant="light"
+                        onPress={handleToggleVisibility}
+                        isDisabled={visibilitySaving}
                         className={`p-2.5 rounded-lg border transition-all ${
                         metadata?.isPublic
                             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
@@ -432,31 +449,33 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
                         title={metadata?.isPublic ? '已公开（点击设为私有）' : '私有（点击设为公开）'}
                     >
                         {metadata?.isPublic ? <Globe size={16} /> : <Lock size={16} />}
-                    </button>
+                    </Button>
                     )}
 
-                    <button onClick={handleOpenRaw} className="p-2.5 rounded-lg border transition-all bg-white/5 hover:bg-white/10 text-zinc-300 border-white/10 hover:border-white/20" title="查看原文">
+                    <Button isIconOnly variant="light" onPress={handleOpenRaw} className="p-2.5 rounded-lg border transition-all bg-white/5 hover:bg-white/10 text-zinc-300 border-white/10 hover:border-white/20" title="查看原文">
                     <ExternalLink size={16} />
-                    </button>
+                    </Button>
                 </div>
               </div>
             </div>
           </div>
         </header>
       )}
-      
+
+      <div className="flex-1 flex min-h-0 overflow-hidden">
       <main ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent scroll-smooth">
         <div className={`${isWrap ? 'max-w-7xl mx-auto' : 'w-fit min-w-full'} min-h-full transition-all duration-300 relative`}>
           
           {showWrapNotice && (
             <div className="m-4 md:m-6 rounded-lg border border-amber-500/20 bg-amber-500/5 text-amber-200/90 text-xs px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 animate-fade-in">
               <span>为提升性能，已关闭自动换行（文件较大）。</span>
-              <button
-                onClick={() => { setIsWrap(true); setShowWrapNotice(false); }}
+              <Button
+                variant="light"
+                onPress={() => { setIsWrap(true); setShowWrapNotice(false); }}
                 className="px-3 py-1 rounded border border-amber-500/30 text-amber-200 hover:bg-amber-500/10 transition text-xs"
               >
                 仍然开启
-              </button>
+              </Button>
             </div>
           )}
 
@@ -573,22 +592,40 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
           </div>
         </div>
       </main>
+      <AnimatePresence>
+        {showAnalysis && (
+          <motion.div
+            key="analysis-sidebar"
+            initial={{ width: 0, opacity: 0, x: 24 }}
+            animate={{ width: 360, opacity: 1, x: 0 }}
+            exit={{ width: 0, opacity: 0, x: 24 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            className="h-full shrink-0 overflow-hidden will-change-[width,opacity,transform]"
+          >
+            <LogAnalysisPanel analysis={analysis} onJumpToLine={scrollToLine} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      </div>
       
       <div className="fixed bottom-8 right-8 flex flex-col gap-3 z-40">
-        <button
-          onClick={scrollToTop}
+        <Button
+          isIconOnly
+          variant="light"
+          onPress={scrollToTop}
           className={`p-3 glass rounded-full text-zinc-400 hover:text-white hover:-translate-y-1 transition-all duration-300 ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
           title="Scroll to Top"
         >
           <ArrowUpToLine size={20} />
-        </button>
-        <button
-          onClick={scrollToBottom}
+        </Button>
+        <Button
+          isIconOnly
+          onPress={scrollToBottom}
           className="p-3 bg-emerald-600 text-white rounded-full shadow-lg shadow-emerald-900/20 hover:bg-emerald-500 hover:-translate-y-1 transition-all active:scale-95"
           title="Scroll to Bottom"
         >
           <ArrowDownToLine size={20} />
-        </button>
+        </Button>
       </div>
     </div>
   );

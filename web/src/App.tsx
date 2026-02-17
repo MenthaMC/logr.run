@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
-import LogViewer from './components/LogViewer';
-import Home from './pages/Home';
-import ApiDocs from './pages/ApiDocs';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './components/ui/Toast';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
+import { useI18n } from './i18n';
+
+const Home = lazy(() => import('./pages/Home'));
+const LogViewer = lazy(() => import('./components/LogViewer'));
+const ApiDocs = lazy(() => import('./pages/ApiDocs'));
+const Login = lazy(() => import('./pages/Login'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
 
 const getPageFromPath = (path) => {
     if (path.startsWith('/view/')) return 'view';
@@ -45,6 +47,29 @@ export default function App() {
         const handlePopState = () => syncFromPath(window.location.pathname);
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
+
+    useEffect(() => {
+        const warmup = () => {
+            const preloaders = [
+                () => import('./pages/Home'),
+                () => import('./components/LogViewer'),
+                () => import('./pages/ApiDocs'),
+                () => import('./pages/Login'),
+                () => import('./pages/Dashboard')
+            ];
+            preloaders.forEach((load) => {
+                void load().catch(() => {});
+            });
+        };
+
+        if ('requestIdleCallback' in window) {
+            const idleId = window.requestIdleCallback(warmup, { timeout: 2000 });
+            return () => window.cancelIdleCallback(idleId);
+        }
+
+        const timer = window.setTimeout(warmup, 1200);
+        return () => window.clearTimeout(timer);
     }, []);
 
     const handleLogin = (t) => {
@@ -98,6 +123,34 @@ export default function App() {
         window.history.pushState({}, '', `/view/${id}`);
     }
 
+    const renderPage = () => {
+        if (page === 'view') {
+            return <LogViewer id={logId} initialContent={initialContent} onBack={() => handleNav('home')} token={token} />;
+        }
+
+        if (page === 'home') {
+            return <div className="h-full overflow-y-auto custom-scrollbar"><Home onSuccess={(id, content) => handleViewSuccess(id, content)} onNav={handleNav} token={token} /></div>;
+        }
+
+        if (page === 'api') {
+            return <div className="h-full overflow-y-auto custom-scrollbar"><ApiDocs /></div>;
+        }
+
+        if (page === 'login') {
+            return <Login onLogin={handleLogin} />;
+        }
+
+        if (page === 'dashboard') {
+            return (
+                <div className="h-full overflow-y-auto custom-scrollbar">
+                    <Dashboard token={token} onView={handleDashboardView} onAuthError={handleAuthError} />
+                </div>
+            );
+        }
+
+        return null;
+    };
+
     return (
         <ToastProvider>
             <ConfirmProvider>
@@ -106,24 +159,23 @@ export default function App() {
 
                     <main className="flex-1 relative overflow-hidden flex flex-col">
                         <ErrorBoundary>
-                            {page === 'view' ? (
-                                <LogViewer id={logId} initialContent={initialContent} onBack={() => handleNav('home')} token={token} />
-                            ) : (
-                                <>
-                                    {page === 'home' && <div className="h-full overflow-y-auto custom-scrollbar"><Home onSuccess={(id, content) => handleViewSuccess(id, content)} onNav={handleNav} token={token} /></div>}
-                                    {page === 'api' && <div className="h-full overflow-y-auto custom-scrollbar"><ApiDocs /></div>}
-                                    {page === 'login' && <Login onLogin={handleLogin} />}
-                                    {page === 'dashboard' && (
-                                        <div className="h-full overflow-y-auto custom-scrollbar">
-                                            <Dashboard token={token} onView={handleDashboardView} onAuthError={handleAuthError} />
-                                        </div>
-                                    )}
-                                </>
-                            )}
+                            <Suspense fallback={<PageLoading />}>
+                                {renderPage()}
+                            </Suspense>
                         </ErrorBoundary>
                     </main>
                 </div>
             </ConfirmProvider>
         </ToastProvider>
+    );
+}
+
+function PageLoading() {
+    const { t } = useI18n();
+
+    return (
+        <div className="h-full w-full flex items-center justify-center">
+            <div className="text-xs text-zinc-500 font-mono tracking-wider">{t('common.loading')}</div>
+        </div>
     );
 }

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import { Button } from '@heroui/react';
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 
 const ToastContext = createContext(null);
@@ -62,41 +63,33 @@ const TOAST_META = {
     label: '成功',
     icon: <CheckCircle size={18} className="text-emerald-300" />,
     border: 'border-emerald-500/25',
-    stripe: 'bg-emerald-500/70',
     iconBg: 'bg-emerald-500/10 border-emerald-500/20',
     title: 'text-emerald-200',
-    body: 'text-emerald-100/90',
-    glow: 'shadow-emerald-500/10',
+    body: 'text-zinc-200',
   },
   error: {
     label: '错误',
     icon: <AlertCircle size={18} className="text-red-300" />,
     border: 'border-red-500/25',
-    stripe: 'bg-red-500/70',
     iconBg: 'bg-red-500/10 border-red-500/20',
     title: 'text-red-200',
-    body: 'text-red-100/90',
-    glow: 'shadow-red-500/10',
+    body: 'text-zinc-200',
   },
   warning: {
     label: '警告',
     icon: <AlertTriangle size={18} className="text-amber-300" />,
     border: 'border-amber-500/25',
-    stripe: 'bg-amber-500/70',
     iconBg: 'bg-amber-500/10 border-amber-500/20',
     title: 'text-amber-200',
-    body: 'text-amber-100/90',
-    glow: 'shadow-amber-500/10',
+    body: 'text-zinc-200',
   },
   info: {
     label: '提示',
     icon: <Info size={18} className="text-sky-300" />,
     border: 'border-sky-500/25',
-    stripe: 'bg-sky-500/70',
     iconBg: 'bg-sky-500/10 border-sky-500/20',
     title: 'text-sky-200',
-    body: 'text-sky-100/90',
-    glow: 'shadow-sky-500/10',
+    body: 'text-zinc-200',
   },
 };
 
@@ -118,9 +111,8 @@ const ToastItem = ({ message, type, closing, onClose }) => {
 
   return (
     <div
-      className={`pointer-events-auto relative overflow-hidden w-[320px] sm:w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border bg-black/55 backdrop-blur-xl shadow-xl transform-gpu will-change-transform ${m.glow} ${m.border} transition-all duration-300 ${isVisible ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 translate-x-2 scale-[0.98]'}`}
+      className={`pointer-events-auto relative overflow-hidden w-[320px] sm:w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border bg-[#111119]/95 backdrop-blur-lg shadow-xl transform-gpu will-change-transform ${m.border} transition-all duration-300 ${isVisible ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 translate-x-2 scale-[0.98]'}`}
     >
-      <div className={`absolute left-0 top-0 bottom-0 w-1 ${m.stripe}`} />
       <div className="relative flex items-start gap-3 px-4 py-3">
         <div className={`mt-0.5 w-9 h-9 rounded-xl flex items-center justify-center border ${m.iconBg}`}>
           {m.icon}
@@ -129,13 +121,15 @@ const ToastItem = ({ message, type, closing, onClose }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-3">
             <div className={`text-xs font-bold tracking-wide ${m.title}`}>{m.label}</div>
-            <button
-              onClick={onClose}
+            <Button
+              isIconOnly
+              variant="light"
+              onPress={onClose}
               className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
               aria-label="关闭"
             >
               <X size={16} />
-            </button>
+            </Button>
           </div>
           {showContent ? (
             <div className={`mt-1 text-sm leading-relaxed break-words ${m.body}`}>{message}</div>
