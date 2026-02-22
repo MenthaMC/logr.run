@@ -21,6 +21,7 @@ const createAuthRoutes = require('./src/routes/authRoutes.ts');
 const createDashboardRoutes = require('./src/routes/dashboardRoutes.ts');
 const createLogRoutes = require('./src/routes/logRoutes.ts');
 const createSystemRoutes = require('./src/routes/systemRoutes.ts');
+const { loadRules } = require('./ruleEngine.js');
 
 const app = express();
 
@@ -62,6 +63,13 @@ const startServer = async () => {
         await ensureTmpDir();
     } catch (error) {
         console.error('Failed to prepare tmp directory:', error);
+    }
+
+    try {
+        const rules = loadRules();
+        console.log(`[Rules] Loaded ${rules.length} rule(s).`);
+    } catch (error) {
+        console.error('[Rules] Failed to load rule files:', error);
     }
 
     startRateLimitCleanup();

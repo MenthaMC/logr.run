@@ -3,7 +3,7 @@ import Navbar from './components/Navbar';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './components/ui/Toast';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
-import { useI18n } from './i18n';
+import { t } from './lib/text';
 
 const Home = lazy(() => import('./pages/Home'));
 const LogViewer = lazy(() => import('./components/LogViewer'));
@@ -73,9 +73,9 @@ export default function App() {
         return () => window.clearTimeout(timer);
     }, []);
 
-    const handleLogin = (t) => {
-        localStorage.setItem('token', t);
-        setToken(t);
+    const handleLogin = (nextToken) => {
+        localStorage.setItem('token', nextToken);
+        setToken(nextToken);
         setAnimateDashboardEntry(true);
         handleNav('dashboard', true);
     }
@@ -185,8 +185,6 @@ export default function App() {
 }
 
 function PageLoading() {
-    const { t } = useI18n();
-
     return (
         <div className="h-full w-full flex items-center justify-center">
             <div className="text-xs text-zinc-500 font-mono tracking-wider">{t('common.loading')}</div>

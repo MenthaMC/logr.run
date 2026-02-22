@@ -1,16 +1,14 @@
 import type { Config } from 'tailwindcss';
-import { heroui } from '@heroui/react';
 
 const config: Config = {
   content: [
     "./index.html",
-    "./src/**/*.{js,jsx,ts,tsx}",
-    "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}"
   ],
   theme: {
     extend: {
       colors: {
-        background: '#05050a',
+        background: '#0a0b0d',
         surface: '#0e0e11',
         'surface-hover': '#18181b',
         border: '#27272a',
@@ -38,7 +36,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [heroui()]
+  plugins: []
 };
 
 export default config;

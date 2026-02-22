@@ -5,8 +5,77 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   isDisabled?: boolean;
   isLoading?: boolean;
   isIconOnly?: boolean;
-  variant?: string;
+  variant?: 'solid' | 'light' | 'bordered' | 'flat' | 'ghost' | string;
+  color?: 'default' | 'primary' | 'success' | 'warning' | 'danger' | string;
+  size?: 'sm' | 'md' | 'lg' | string;
+  radius?: 'none' | 'sm' | 'md' | 'lg' | 'full' | string;
+  fullWidth?: boolean;
+  startContent?: React.ReactNode;
+  endContent?: React.ReactNode;
 };
+
+function cn(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(' ');
+}
+
+function resolveVariantClass(variant: ButtonProps['variant'], color: ButtonProps['color']) {
+  if (!variant && !color) return '';
+
+  const normalizedVariant = variant ?? 'solid';
+  const normalizedColor = color ?? 'default';
+
+  if (normalizedVariant === 'light') {
+    return 'bg-transparent text-inherit border border-transparent hover:bg-white/10';
+  }
+
+  if (normalizedVariant === 'bordered') {
+    if (normalizedColor === 'primary') {
+      return 'bg-transparent text-white border border-white/20 hover:bg-white/10';
+    }
+    return 'bg-transparent text-zinc-200 border border-white/15 hover:bg-white/10';
+  }
+
+  if (normalizedVariant === 'flat') {
+    if (normalizedColor === 'primary') {
+      return 'bg-emerald-500/15 text-emerald-200 border border-emerald-400/20 hover:bg-emerald-500/25';
+    }
+    return 'bg-white/10 text-zinc-100 border border-white/10 hover:bg-white/15';
+  }
+
+  if (normalizedVariant === 'ghost') {
+    return 'bg-transparent text-inherit border border-transparent hover:bg-white/5';
+  }
+
+  if (normalizedColor === 'primary') {
+    return 'bg-white text-zinc-950 border border-white/25 hover:bg-zinc-200';
+  }
+  if (normalizedColor === 'success') {
+    return 'bg-emerald-600 text-white border border-emerald-500 hover:bg-emerald-500';
+  }
+  if (normalizedColor === 'warning') {
+    return 'bg-amber-500 text-zinc-950 border border-amber-400 hover:bg-amber-400';
+  }
+  if (normalizedColor === 'danger') {
+    return 'bg-red-600 text-white border border-red-500 hover:bg-red-500';
+  }
+  return 'bg-zinc-100 text-zinc-950 border border-zinc-200 hover:bg-zinc-200';
+}
+
+function resolveSizeClass(size: ButtonProps['size']) {
+  if (!size) return '';
+  if (size === 'sm') return 'h-8 px-3 text-xs';
+  if (size === 'lg') return 'h-12 px-5 text-base';
+  return 'h-10 px-4 text-sm';
+}
+
+function resolveRadiusClass(radius: ButtonProps['radius']) {
+  if (!radius) return '';
+  if (radius === 'none') return 'rounded-none';
+  if (radius === 'sm') return 'rounded-md';
+  if (radius === 'lg') return 'rounded-xl';
+  if (radius === 'full') return 'rounded-full';
+  return '';
+}
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   props,
@@ -19,6 +88,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
     isLoading,
     isIconOnly,
     variant,
+    color,
+    size,
+    radius,
+    fullWidth,
+    startContent,
+    endContent,
     disabled,
     onMouseEnter,
     onMouseLeave,
@@ -129,12 +204,31 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
     if (typeof onKeyUp === 'function') onKeyUp(event);
   };
 
+  const slotStart = isLoading ? (
+    <span
+      className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-r-transparent"
+      aria-hidden="true"
+    />
+  ) : (
+    startContent
+  );
+
+  const baseClassName = cn(
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap align-middle select-none transition-colors',
+    'disabled:cursor-not-allowed disabled:opacity-50',
+    isIconOnly ? 'p-0 aspect-square' : resolveSizeClass(size),
+    resolveRadiusClass(radius),
+    resolveVariantClass(variant, color),
+    fullWidth && 'w-full',
+  );
+
   return (
     <button
       ref={ref}
       type={type}
-      className={className}
+      className={cn(baseClassName, className)}
       disabled={finalDisabled}
+      aria-busy={isLoading || undefined}
       data-hover={isHovered ? 'true' : 'false'}
       data-pressed={isPressed ? 'true' : 'false'}
       data-focus={isFocused ? 'true' : 'false'}
@@ -155,7 +249,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
       onKeyUp={handleKeyUp}
       {...rest}
     >
+      {slotStart}
       {children}
+      {!isLoading ? endContent : null}
     </button>
   );
 });

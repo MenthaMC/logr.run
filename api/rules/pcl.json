@@ -1,0 +1,57 @@
+{
+  "name": "pcl",
+  "rules": [
+    {
+      "id": "PCL_LAUNCH_FAILED",
+      "severity": "error",
+      "match": [
+        { "type": "regex", "value": "(Plain Craft Launcher|PCL).*(launch|start|run).*(failed|error)" },
+        { "type": "contains", "value": "Launcher launch failed" }
+      ],
+      "message": "Launcher startup failed. Check runtime and game configuration.",
+      "actions": [
+        { "label": "Copy Clean Start Args", "type": "copy", "value": "--disable-mods --vanilla" }
+      ],
+      "tags": ["launcher", "startup"]
+    },
+    {
+      "id": "PCL_DOWNLOAD_FAILED",
+      "severity": "warn",
+      "match": [
+        { "type": "regex", "value": "(download|network).*(failed|error|timeout)" },
+        { "type": "contains", "value": "Failed to download" }
+      ],
+      "message": "Download step failed. Verify network stability and mirror availability.",
+      "actions": [
+        { "label": "Mojang Status", "type": "link", "value": "https://status.minecraft.net/" }
+      ],
+      "tags": ["launcher", "network", "download"]
+    },
+    {
+      "id": "JAVA_RUNTIME_NOT_FOUND",
+      "severity": "error",
+      "match": [
+        { "type": "regex", "value": "(java is not recognized|Unable to locate Java Runtime|No Java runtime present)" },
+        { "type": "contains", "value": "Could not find java.dll" }
+      ],
+      "message": "Java runtime not found. Install a compatible Java version and set JAVA_HOME.",
+      "actions": [
+        { "label": "Open Java Download", "type": "link", "value": "https://adoptium.net/" },
+        { "label": "Copy JAVA_HOME Example", "type": "copy", "value": "setx JAVA_HOME \"C:\\Program Files\\Eclipse Adoptium\\jdk-17\" /M" }
+      ],
+      "tags": ["java", "runtime", "launcher"]
+    },
+    {
+      "id": "SESSION_AUTH_FAILED",
+      "severity": "warn",
+      "match": [
+        { "type": "regex", "value": "(invalid session|session has expired|failed to verify username|Unauthorized)" }
+      ],
+      "message": "Account session validation failed. Re-login and refresh launcher credentials.",
+      "actions": [
+        { "label": "Copy Hint", "type": "copy", "value": "Log out and sign in again to refresh the session token." }
+      ],
+      "tags": ["auth", "account", "launcher"]
+    }
+  ]
+}

@@ -14,10 +14,7 @@
 }
 
 body {
-  background:
-    radial-gradient(900px 420px at 10% -10%, rgba(255, 255, 255, 0.04), transparent 60%),
-    radial-gradient(800px 360px at 100% 0%, rgba(16, 185, 129, 0.05), transparent 62%),
-    var(--bg-dark);
+  background: var(--bg-dark);
   color: #f4f4f5;
   font-family: var(--font-mono);
   -webkit-font-smoothing: antialiased;
@@ -49,18 +46,15 @@ code, pre, .font-mono {
   color: #fff;
 }
 
-/* Glassmorphism Utilities */
+/* Surface Utilities */
 .glass {
-  background: rgba(15, 15, 23, 0.84);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: #0f0f17;
   border: 1px solid var(--border-soft);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
 }
 
 .glass-card {
-  background: rgba(16, 16, 24, 0.92);
-  backdrop-filter: blur(6px);
+  background: #101018;
   border: 1px solid var(--border-soft);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
 }

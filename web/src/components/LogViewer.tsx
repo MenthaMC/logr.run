@@ -31,8 +31,10 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
   const [visibilitySaving, setVisibilitySaving] = useState(false);
   
   const scrollRef = useRef(null);
+  const scrollRafRef = useRef(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [scrollTop, setScrollTop] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
   const lines = useMemo(() => (content ? content.split('\n') : []), [content]);
   const totalLines = lines.length;
 
@@ -65,10 +67,10 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
     return results;
   }, [visibleLines, normalizedQuery]);
 
-  const viewportHeight = scrollRef.current ? scrollRef.current.clientHeight : 0;
-  const LINE_HEIGHT = 24; // Increased for better readability
+  const LINE_HEIGHT = 28;
   const OVERSCAN = 30;
-  const isVirtualized = !isWrap && visibleLines.length > 1000;
+  const VIRTUALIZE_THRESHOLD = 300;
+  const isVirtualized = !isWrap && visibleLines.length > VIRTUALIZE_THRESHOLD;
   const startIndex = isVirtualized
     ? Math.max(0, Math.floor(scrollTop / LINE_HEIGHT) - OVERSCAN)
     : 0;
@@ -78,6 +80,25 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
   const windowedLines = isVirtualized ? visibleLines.slice(startIndex, endIndex) : visibleLines;
   const topSpacerHeight = isVirtualized ? startIndex * LINE_HEIGHT : 0;
   const bottomSpacerHeight = isVirtualized ? (visibleLines.length - endIndex) * LINE_HEIGHT : 0;
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const updateViewport = () => {
+      setViewportHeight(el.clientHeight || 0);
+    };
+
+    updateViewport();
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(updateViewport);
+      observer.observe(el);
+      return () => observer.disconnect();
+    }
+
+    window.addEventListener('resize', updateViewport);
+    return () => window.removeEventListener('resize', updateViewport);
+  }, [showAnalysis]);
 
   useEffect(() => {
     let cancelled = false;
@@ -143,7 +164,7 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
   }, [searchMatches]);
 
   useEffect(() => {
-    const WRAP_DISABLE_THRESHOLD = 5000;
+    const WRAP_DISABLE_THRESHOLD = 1200;
     if (!autoWrapDisabled && totalLines > WRAP_DISABLE_THRESHOLD) {
       setIsWrap(false);
       setAutoWrapDisabled(true);
@@ -152,12 +173,22 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
   }, [autoWrapDisabled, totalLines]);
 
   const handleScroll = () => {
-    if (scrollRef.current) {
-      const { scrollTop } = scrollRef.current;
-      setScrollTop(scrollTop);
-      setShowScrollTop(scrollTop > 300);
-    }
+    if (!scrollRef.current) return;
+    if (scrollRafRef.current) return;
+    scrollRafRef.current = window.requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      const nextTop = scrollRef.current ? scrollRef.current.scrollTop : 0;
+      setScrollTop(nextTop);
+      setShowScrollTop(nextTop > 300);
+    });
   };
+
+  useEffect(() => () => {
+    if (scrollRafRef.current) {
+      window.cancelAnimationFrame(scrollRafRef.current);
+      scrollRafRef.current = null;
+    }
+  }, []);
 
   const scrollToTop = () => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   const scrollToBottom = () => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -303,7 +334,7 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
   if (error) return (
     <div className="h-full w-full flex flex-col items-center justify-center bg-[#0a0b0d] text-zinc-300 gap-6 animate-fade-in">
         <div className="relative">
-            <div className="absolute inset-0 bg-red-500/10 blur-3xl rounded-full"></div>
+            <div className="absolute inset-0 bg-red-500/10 rounded-full"></div>
             <div className="relative glass p-8 rounded-2xl shadow-2xl flex flex-col items-center">
                 {isNotFound ? (
                   <span className="text-6xl font-bold text-zinc-200">404</span>

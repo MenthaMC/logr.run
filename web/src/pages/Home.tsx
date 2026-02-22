@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   Upload, FileText, Terminal, X, Zap, AlertTriangle, Box, Shield, Code, Copy, Check,
   ArrowRight, Activity, Search, BarChart3
@@ -54,24 +54,6 @@ const itemVariants = {
 
 const Background = () => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-    <motion.div 
-      animate={{ 
-        scale: [1, 1.2, 1],
-        rotate: [0, 90, 0],
-        opacity: [0.1, 0.2, 0.1] 
-      }}
-      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-      className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-emerald-500/10 rounded-full blur-[100px]"
-    />
-    <motion.div 
-      animate={{ 
-        scale: [1, 1.3, 1],
-        rotate: [0, -60, 0],
-        opacity: [0.1, 0.15, 0.1]
-      }}
-      transition={{ duration: 25, repeat: Infinity, ease: "linear", delay: 2 }}
-      className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[100px]"
-    />
     <div
       className="absolute inset-0 opacity-15 mix-blend-overlay"
       style={{
@@ -90,10 +72,19 @@ export default function Home({ onSuccess, onNav }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isPreviewed, setIsPreviewed] = useState(false);
   const [terminalMessage, setTerminalMessage] = useState(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   
   const fileInputRef = useRef(null);
+  const redirectTimerRef = useRef(null);
   const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
   const MAX_PREVIEW_BYTES = 2 * 1024 * 1024;
+
+  useEffect(() => () => {
+    if (redirectTimerRef.current) {
+      window.clearTimeout(redirectTimerRef.current);
+      redirectTimerRef.current = null;
+    }
+  }, []);
 
   const formatBytes = (bytes) => {
     if (!bytes && bytes !== 0) return '';
@@ -108,7 +99,7 @@ export default function Home({ onSuccess, onNav }) {
   };
   
   const handleUpload = async () => {
-    if (!selectedFile && !content.trim()) return;
+    if ((!selectedFile && !content.trim()) || isRedirecting) return;
     setTerminalMessage(null);
     setLoading(true);
     try {
@@ -118,8 +109,14 @@ export default function Home({ onSuccess, onNav }) {
       if (data.success) {
         const previewContent = selectedFile && !isPreviewed ? "" : content;
         const viewId = data.shortId || data.id;
-        onSuccess(viewId, previewContent);
-        resetInput();
+        setTerminalMessage({ type: 'success', text: '上传成功，正在跳转到分析页面...' });
+        setIsRedirecting(true);
+        redirectTimerRef.current = window.setTimeout(() => {
+          onSuccess(viewId, previewContent);
+          resetInput();
+          setIsRedirecting(false);
+          redirectTimerRef.current = null;
+        }, 720);
       } else {
         setTerminalMessage({ type: 'error', text: data.error || "上传失败" });
       }
@@ -229,7 +226,7 @@ export default function Home({ onSuccess, onNav }) {
             onDrop={(e) => { e.preventDefault(); setIsDragging(false); readFile(e.dataTransfer.files[0]); }}
           >
             {/* Window Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-white/5 backdrop-blur-md">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-white/5">
               <div className="flex gap-2">
                 <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/50"></div>
                 <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/50"></div>
@@ -275,7 +272,7 @@ export default function Home({ onSuccess, onNav }) {
                             className="space-y-2"
                           >
                                {terminalMessage && (
-                                  <div className={`text-[10px] md:text-xs font-mono px-3 py-1.5 rounded-lg border backdrop-blur-md flex items-center gap-2 ${terminalMessage.type === 'error' ? 'text-red-300 bg-red-500/10 border-red-500/20' : 'text-emerald-300 bg-emerald-500/10 border-emerald-500/20'}`}>
+                                  <div className={`text-[10px] md:text-xs font-mono px-3 py-1.5 rounded-lg border flex items-center gap-2 ${terminalMessage.type === 'error' ? 'text-red-300 bg-red-500/10 border-red-500/20' : 'text-emerald-300 bg-emerald-500/10 border-emerald-500/20'}`}>
                                       <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
                                       {terminalMessage.text}
                                   </div>
@@ -302,7 +299,7 @@ export default function Home({ onSuccess, onNav }) {
                         <Button
                             variant="light"
                             onPress={() => fileInputRef.current.click()}
-                            className="px-4 py-2.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 rounded-xl flex items-center gap-2 border border-white/5 hover:border-white/10 transition font-medium text-sm backdrop-blur-md"
+                            className="px-4 py-2.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 rounded-xl flex items-center gap-2 border border-white/5 hover:border-white/10 transition font-medium text-sm"
                             startContent={<FileText size={16} />}
                         >
                             <span className="hidden sm:inline">选择文件</span>
@@ -314,7 +311,7 @@ export default function Home({ onSuccess, onNav }) {
                     >
                         <Button
                             onPress={handleUpload}
-                            isDisabled={(!content.trim() && !selectedFile) || loading}
+                            isDisabled={(!content.trim() && !selectedFile) || loading || isRedirecting}
                             isLoading={loading}
                             className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-900/20 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none text-sm group/btn"
                             startContent={!loading ? <Upload size={16} className="group-hover/btn:-translate-y-0.5 transition-transform" /> : null}
@@ -332,7 +329,7 @@ export default function Home({ onSuccess, onNav }) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center z-20"
+                  className="absolute inset-0 bg-zinc-950/80 flex items-center justify-center z-20"
                 >
                   <motion.div 
                     initial={{ scale: 0.8 }}
@@ -442,6 +439,42 @@ export default function Home({ onSuccess, onNav }) {
         </motion.div>
 
       </motion.div>
+
+      <AnimatePresence>
+        {isRedirecting && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-30 bg-[#06080b]/85 flex items-center justify-center"
+          >
+            <motion.div
+              initial={{ y: 16, opacity: 0, scale: 0.96 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 8, opacity: 0, scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 24 }}
+              className="px-7 py-6 rounded-2xl border border-emerald-400/20 bg-zinc-950/90 shadow-[0_0_50px_rgba(16,185,129,0.15)] flex flex-col items-center gap-4"
+            >
+              <motion.div
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                className="w-12 h-12 rounded-full border-2 border-emerald-400/20 border-t-emerald-400"
+              />
+              <div className="text-center">
+                <div className="text-emerald-300 font-semibold tracking-wide">上传完成</div>
+                <div className="text-zinc-400 text-sm mt-1">正在跳转到日志分析页...</div>
+              </div>
+              <motion.div
+                animate={{ x: [0, 6, 0], opacity: [0.45, 1, 0.45] }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+                className="text-emerald-400"
+              >
+                <ArrowRight size={18} />
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

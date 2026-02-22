@@ -1,11 +1,7 @@
 const crypto = require('crypto');
 const fs = require('fs').promises;
-const fsSync = require('fs');
 const multer = require('multer');
 const path = require('path');
-const { pipeline, Transform, Writable } = require('stream');
-const { promisify } = require('util');
-const zlib = require('zlib');
 const {
     CLEANUP_INTERVAL,
     CONFIG,
@@ -27,41 +23,7 @@ const { getUserFromToken } = require('./authService.ts');
 const { analyzeLogContent, maskAnalysis, maskMetadata, maskSensitiveText } = require('./logAnalysisService.ts');
 const { formatLogId, isTooLarge, isValidLogId, normalizeReason } = require('./helpers.ts');
 const { createHttpError } = require('../utils/httpError.ts');
-
-const pipelineAsync = promisify(pipeline);
-
-const createSizeLimitStream = (maxBytes) => {
-    let total = 0;
-    return new Transform({
-        transform(chunk, encoding, callback) {
-            total += chunk.length;
-            if (total > maxBytes) {
-                const err = new Error('Log too large');
-                err.code = 'LIMIT_EXCEEDED';
-                callback(err);
-                return;
-            }
-            callback(null, chunk);
-        }
-    });
-};
-
-const readLogContentFromPath = async (sourcePath, useGunzip) => {
-    const chunks = [];
-    const collector = new Writable({
-        write(chunk, encoding, callback) {
-            chunks.push(chunk);
-            callback();
-        }
-    });
-
-    const streams = [fsSync.createReadStream(sourcePath)];
-    if (useGunzip) streams.push(zlib.createGunzip());
-    streams.push(createSizeLimitStream(MAX_LOG_BYTES));
-    streams.push(collector);
-    await pipelineAsync(...streams);
-    return Buffer.concat(chunks).toString('utf8');
-};
+const { prepareLogPackFromContent, prepareLogPackFromUpload } = require('../../logPack.js');
 
 const generateLogId = async () => {
     while (true) {
@@ -130,24 +92,24 @@ const createLogEntry = async (req) => {
     }
 
     let content = null;
+    let prepared = null;
     if (req.file) {
-        const isGzip = req.file.mimetype === 'application/gzip' || req.file.originalname.endsWith('.gz');
-        try {
-            content = await readLogContentFromPath(req.file.path, isGzip);
-        } catch (err) {
-            if (isGzip && err && (err.code === 'Z_DATA_ERROR' || err.code === 'Z_BUF_ERROR')) {
-                content = await readLogContentFromPath(req.file.path, false);
-            } else {
-                throw err;
-            }
-        }
+        prepared = await prepareLogPackFromUpload({
+            sourcePath: req.file.path,
+            originalName: req.file.originalname,
+            mimetype: req.file.mimetype
+        });
+        content = prepared?.combinedText || null;
     } else if (req.body.content) {
         if (typeof req.body.content !== 'string') throw createHttpError(400, 'Invalid content');
         if (Buffer.byteLength(req.body.content, 'utf8') > MAX_LOG_BYTES) throw createHttpError(413, 'Log too large');
-        content = req.body.content;
+        prepared = prepareLogPackFromContent(req.body.content, 'manual-input.log');
+        content = prepared?.combinedText || req.body.content;
     } else {
         throw createHttpError(400, 'No content provided');
     }
+    if (!content || !content.trim()) throw createHttpError(400, 'No analyzable log content');
+    if (Buffer.byteLength(content, 'utf8') > MAX_LOG_BYTES) throw createHttpError(413, 'Log too large');
 
     if (req.body.reason && typeof req.body.reason !== 'string') throw createHttpError(400, 'Invalid reason');
     const reason = normalizeReason(req.body.reason);
@@ -175,7 +137,7 @@ const createLogEntry = async (req) => {
         projectId = project.id;
     }
 
-    const analysis = analyzeLogContent(content);
+    const analysis = analyzeLogContent(prepared || content);
     await logsDb.run(
         `INSERT INTO logs (id, plugin_id, reason, content, original_name, report_name, error, client_time, analysis_json)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,

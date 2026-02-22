@@ -1,0 +1,103 @@
+{
+  "name": "core",
+  "rules": [
+    {
+      "id": "OUT_OF_MEMORY",
+      "severity": "error",
+      "match": [
+        { "type": "contains", "value": "OutOfMemoryError" },
+        { "type": "regex", "value": "Java heap space" }
+      ],
+      "message": "OutOfMemoryError detected. Increase JVM memory or reduce loaded mods/plugins.",
+      "actions": [
+        { "label": "Copy JVM Arg", "type": "copy", "value": "-Xmx4G" },
+        { "label": "Java Setup Guide", "type": "link", "value": "https://prismlauncher.org/wiki/getting-started/installing-java/" }
+      ],
+      "tags": ["memory", "jvm", "crash"]
+    },
+    {
+      "id": "STACK_OVERFLOW",
+      "severity": "error",
+      "match": [
+        { "type": "contains", "value": "StackOverflowError" }
+      ],
+      "message": "StackOverflowError detected. A mod/plugin may be stuck in recursive calls.",
+      "actions": [
+        { "label": "Open Troubleshooting", "type": "link", "value": "https://minecraft.wiki/w/Tutorials/Setting_up_a_server" }
+      ],
+      "tags": ["stack", "mod", "plugin"]
+    },
+    {
+      "id": "CLASS_NOT_FOUND",
+      "severity": "error",
+      "match": [
+        { "type": "regex", "value": "(ClassNotFoundException|NoClassDefFoundError)" }
+      ],
+      "message": "Missing class detected. Check dependencies and version compatibility.",
+      "actions": [
+        { "label": "Search Modrinth", "type": "link", "value": "https://modrinth.com/mods" }
+      ],
+      "tags": ["dependency", "classpath"]
+    },
+    {
+      "id": "NO_SUCH_METHOD",
+      "severity": "error",
+      "match": [
+        { "type": "contains", "value": "NoSuchMethodError" }
+      ],
+      "message": "NoSuchMethodError detected. This is usually caused by incompatible versions.",
+      "actions": [
+        { "label": "Open Compatibility Docs", "type": "link", "value": "https://fabricmc.net/wiki/tutorial:mod_dependencies" }
+      ],
+      "tags": ["compatibility", "mods"]
+    },
+    {
+      "id": "MOD_RESOLUTION",
+      "severity": "error",
+      "match": [
+        { "type": "regex", "value": "(Missing\\s+mods|Missing Mods|ModResolutionException|ModLoadingException|Failed to load mod)" }
+      ],
+      "message": "Mod resolution failed. Check missing or incompatible mods.",
+      "actions": [
+        { "label": "Open Modrinth", "type": "link", "value": "https://modrinth.com/mods" }
+      ],
+      "tags": ["mods", "resolution"]
+    },
+    {
+      "id": "MIXIN_FAILED",
+      "severity": "error",
+      "match": [
+        { "type": "regex", "value": "(Mixin apply failed|MixinApplyError|MixinTransformerError)" }
+      ],
+      "message": "Mixin apply failed. Check mod and loader compatibility.",
+      "actions": [
+        { "label": "Fabric Loader Versions", "type": "link", "value": "https://fabricmc.net/use/installer/" }
+      ],
+      "tags": ["mixin", "fabric", "compatibility"]
+    },
+    {
+      "id": "PLUGIN_EXCEPTION",
+      "severity": "warn",
+      "match": [
+        { "type": "regex", "value": "(Exception in thread|Caused by:)" }
+      ],
+      "message": "Exception detected. Inspect stack trace lines near the evidence.",
+      "actions": [
+        { "label": "Copy Search Prefix", "type": "copy", "value": "Caused by:" }
+      ],
+      "tags": ["exception", "stacktrace"]
+    },
+    {
+      "id": "MINECRAFT_CRASH_REPORT",
+      "severity": "warn",
+      "match": [
+        { "type": "contains", "value": "---- Minecraft Crash Report ----" }
+      ],
+      "message": "Minecraft crash report header detected.",
+      "actions": [
+        { "label": "Open Raw Log", "type": "copy", "value": "Use the Raw button to copy full crash context." }
+      ],
+      "tags": ["crash-report"]
+    }
+  ]
+}

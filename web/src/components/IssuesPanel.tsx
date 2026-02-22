@@ -4,7 +4,7 @@ import { AlertTriangle, Bug, Search, X, Copy, Loader2 } from 'lucide-react';
 import { AreaChart, Area, Tooltip, ResponsiveContainer, XAxis } from 'recharts';
 import { useToast } from './ui/Toast';
 import { API_BASE_URL } from '../config/api';
-import { useI18n } from '../i18n';
+import { t } from '../lib/text';
 
 const API_URL = `${API_BASE_URL}/dashboard`;
 
@@ -35,7 +35,6 @@ function IssueTooltip({ active, payload, label, eventsLabel = 'events' }) {
 
 export default function IssuesPanel({ token, activeProject, onView, onAuthError }) {
   const toast = useToast();
-  const { t } = useI18n();
   const [range, setRange] = useState('7d');
   const [sort, setSort] = useState('lastSeen');
   const [q, setQ] = useState('');

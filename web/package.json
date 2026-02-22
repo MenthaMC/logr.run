@@ -11,7 +11,6 @@
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@fontsource/noto-sans-sc": "^5.2.9",
-    "@heroui/react": "^2.8.9",
     "framer-motion": "^12.29.0",
     "lucide-react": "^0.451.0",
     "react": "^18.2.0",

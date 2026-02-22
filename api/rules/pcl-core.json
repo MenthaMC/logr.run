@@ -1,0 +1,294 @@
+{
+  "name": "pcl-core",
+  "rules": [
+    {
+      "id": "JAVA_ARGS_INVALID",
+      "priority": 1,
+      "severity": "error",
+      "scope": "mc",
+      "match": [
+        { "type": "contains", "value": "Unrecognized option:" },
+        { "type": "contains", "value": "Invalid maximum heap size" }
+      ],
+      "title": "Java 参数配置错误",
+      "message": "检测到 JVM 参数无效。请检查启动参数（尤其是 -Xmx/-Xms）并恢复为默认后重试。",
+      "actions": [
+        { "label": "复制推荐参数", "type": "copy", "value": "-Xms512M -Xmx4G" }
+      ]
+    },
+    {
+      "id": "FORGE_JSON_MULTI",
+      "priority": 1,
+      "severity": "error",
+      "scope": "mc",
+      "match": [
+        { "type": "contains", "value": "Found multiple arguments for option fml.forgeVersion" }
+      ],
+      "title": "版本 Json 存在多个 Forge 参数",
+      "message": "当前版本配置异常，建议重新安装对应版本 Forge，不要通过第三方启动器叠加修改。",
+      "actions": []
+    },
+    {
+      "id": "MOD_JAR_EXTRACTED",
+      "priority": 1,
+      "severity": "error",
+      "scope": "mc",
+      "match": [
+        { "type": "contains", "value": "Extracted mod jars found, loading will NOT continue" },
+        { "type": "contains", "value": "The directories below appear to be extracted jar files" }
+      ],
+      "title": "Mod 被解压导致加载失败",
+      "message": "检测到被解压的 Mod 目录。请删除解压目录，仅保留 .jar 文件。",
+      "actions": []
+    },
+    {
+      "id": "MIXIN_BOOTSTRAP_MISSING",
+      "priority": 1,
+      "severity": "error",
+      "scope": "mc",
+      "match": [
+        { "type": "contains", "value": "ClassNotFoundException: org.spongepowered.asm.launch.MixinTweaker" }
+      ],
+      "title": "MixinBootstrap 缺失",
+      "message": "启动链缺失 MixinBootstrap。请补装相关依赖或按整合包作者说明修复。",
+      "actions": []
+    },
+    {
+      "id": "OPENGL_UNSUPPORTED",
+      "priority": 1,
+      "severity": "error",
+      "scope": "mc",
+      "match": [
+        { "type": "contains", "value": "The driver does not appear to support OpenGL" },
+        { "type": "contains", "value": "Pixel format not accelerated" }
+      ],
+      "title": "显卡/驱动不支持 OpenGL",
+      "message": "图形驱动能力不足。建议更新显卡驱动，并确认游戏使用的是独显而非核显。",
+      "actions": []
+    },
+    {
+      "id": "OPENJ9_NOT_SUPPORTED",
+      "priority": 1,
+      "severity": "error",
+      "scope": "mc",
+      "match": [
+        { "type": "contains", "value": "Open J9 is not supported" },
+        { "type": "contains", "value": "OpenJ9 is incompatible" },
+        { "type": "contains", "value": ".J9VMInternals." }
+      ],
+      "title": "使用了不兼容的 OpenJ9",
+      "message": "当前 Java 运行时为 OpenJ9，和该实例不兼容。请改用 HotSpot / Temurin。",
+      "actions": [
+        { "label": "下载 Temurin", "type": "link", "value": "https://adoptium.net/" }
+      ]
+    },
+    {
+      "id": "OUT_OF_MEMORY",
+      "priority": 1,
+      "severity": "error",
+      "scope": "all",
+      "match": [
+        { "type": "contains", "value": "java.lang.OutOfMemoryError" },
+        { "type": "contains", "value": "Out of Memory Error" },
+        { "type": "contains", "value": "The system is out of physical RAM or swap space" },
+        { "type": "contains", "value": "Could not reserve enough space" }
+      ],
+      "title": "内存不足",
+      "message": "检测到内存不足崩溃。请减少 Mod/材质负载并提高可用内存；必要时更换 64 位 Java。",
+      "actions": [
+        { "label": "复制推荐参数", "type": "copy", "value": "-Xms1G -Xmx4G" }
+      ]
+    },
+    {
+      "id": "SHADERSMOD_OPTIFINE_CONFLICT",
+      "priority": 1,
+      "severity": "error",
+      "scope": "mc",
+      "match": [
+        { "type": "contains", "value": "Shaders Mod detected. Please remove it, OptiFine has built-in support for shaders." }
+      ],
+      "title": "ShadersMod 与 OptiFine 冲突",
+      "message": "同时安装了 ShadersMod 与 OptiFine。删除 ShadersMod 后重试。",
+      "actions": []
+    },
+    {
+      "id": "FORGE_INCOMPLETE_INSTALL",
+      "priority": 1,
+      "severity": "error",
+      "scope": "mc",
+      "match": [
+        { "type": "contains", "value": "Cannot find launch target fmlclient, unable to launch" },
+        { "type": "contains", "value": "Invalid paths argument, contained no existing paths" }
+      ],
+      "title": "Forge 安装不完整",
+      "message": "Forge 关键文件缺失。请删除该版本后重新完整安装同版本 Forge。",
+      "actions": []
+    },
+    {
+      "id": "MOD_DUPLICATE",
+      "priority": 1,
+      "severity": "error",
+      "scope": "mc",
+      "match": [
+        { "type": "contains", "value": "DuplicateModsFoundException" },
+        { "type": "contains", "value": "Found duplicate mods" },
+        { "type": "contains", "value": "Found a duplicate mod" },
+        { "type": "contains", "value": "ModResolutionException: Duplicate" }
+      ],
+      "title": "Mod 重复安装",
+      "message": "检测到重复 Mod。每个 Mod 只能保留一份，请删除重复项。",
+      "actions": []
+    },
+    {
+      "id": "MOD_NEEDS_JAVA11",
+      "priority": 1,
+      "severity": "error",
+      "scope": "mc",
+      "match": [
+        { "type": "contains", "value": "class file version 55.0" },
+        { "type": "contains", "value": "compatibility level JAVA_11 could not be set" },
+        { "type": "contains", "value": "Unsupported major.minor version" }
+      ],
+      "title": "Mod 需要更高 Java 版本",
+      "message": "当前 Java 版本过低。请切换到 Java 11+（按整合包要求选择版本）。",
+      "actions": [
+        { "label": "下载 Java", "type": "link", "value": "https://adoptium.net/" }
+      ]
+    },
+    {
+      "id": "MIXIN_FAILED",
+      "priority": 2,
+      "severity": "error",
+      "scope": "all",
+      "match": [
+        { "type": "contains", "value": "Mixin prepare failed" },
+        { "type": "contains", "value": "Mixin apply failed" },
+        { "type": "contains", "value": "MixinApplyError" },
+        { "type": "contains", "value": "MixinTransformerError" },
+        { "type": "contains", "value": "mixin.injection.throwables." }
+      ],
+      "title": "Mixin 注入失败",
+      "message": "存在 Mod 注入冲突或环境不兼容。建议先禁用最近新增 Mod，再逐步回加定位。",
+      "actions": []
+    },
+    {
+      "id": "MOD_CONFIG_BROKEN",
+      "priority": 2,
+      "severity": "warn",
+      "scope": "all",
+      "match": [
+        { "type": "contains", "value": "Failed loading config file" },
+        { "type": "contains", "value": "nightconfig.core.io.ParsingException" }
+      ],
+      "title": "Mod 配置文件异常",
+      "message": "检测到配置文件解析失败。可先删除对应 Mod 的配置文件，让其自动重建。",
+      "actions": []
+    },
+    {
+      "id": "FABRIC_POTENTIAL_SOLUTION",
+      "priority": 2,
+      "severity": "warn",
+      "scope": "mc",
+      "match": [
+        { "type": "contains", "value": "A potential solution has been determined" },
+        { "type": "contains", "value": "确定了一种可能的解决方法" }
+      ],
+      "title": "Fabric 已给出修复建议",
+      "message": "日志中包含 Fabric 官方建议，请优先按日志提示安装/替换缺失依赖。",
+      "actions": []
+    },
+    {
+      "id": "MOD_INCOMPATIBLE",
+      "priority": 2,
+      "severity": "error",
+      "scope": "mc",
+      "match": [
+        { "type": "contains", "value": "Incompatible mods found!" },
+        { "type": "contains", "value": "Missing or unsupported mandatory dependencies:" }
+      ],
+      "title": "Mod 依赖或兼容性冲突",
+      "message": "检测到 Mod 互不兼容或缺少前置。请按日志中列出的依赖关系调整版本。",
+      "actions": []
+    },
+    {
+      "id": "LOADER_EXCEPTION_FROM_MOD",
+      "priority": 2,
+      "severity": "error",
+      "scope": "all",
+      "match": [
+        { "type": "contains", "value": "LoaderExceptionModCrash: Caught exception from" },
+        { "type": "contains", "value": "Caught exception from " },
+        { "type": "contains", "value": "due to errors, provided by " }
+      ],
+      "title": "某个 Mod 明确触发崩溃",
+      "message": "加载器已指向具体 Mod。建议先禁用该 Mod 并检查其版本是否与当前实例兼容。",
+      "actions": []
+    },
+    {
+      "id": "MOD_RESOLUTION_FAILED",
+      "priority": 3,
+      "severity": "warn",
+      "scope": "mc",
+      "match": [
+        { "type": "contains", "value": "Mod resolution failed" },
+        { "type": "contains", "value": "ModLoadingException" },
+        { "type": "contains", "value": "ModResolutionException" }
+      ],
+      "title": "Mod 解析失败",
+      "message": "Mod 解析阶段失败。通常是依赖缺失或版本冲突，建议核对 Mod 与 Loader 版本矩阵。",
+      "actions": []
+    },
+    {
+      "id": "RESOURCE_VALIDATION_FAILED",
+      "priority": 3,
+      "severity": "warn",
+      "scope": "mc",
+      "match": [
+        { "type": "contains", "value": "signer information does not match signer information" },
+        { "type": "contains", "value": "File contents differ from expected" }
+      ],
+      "title": "文件校验失败",
+      "message": "检测到文件签名或内容异常。建议清理后重新下载该版本与相关 Mod。",
+      "actions": []
+    },
+    {
+      "id": "CRASH_BLOCK_LOCATION",
+      "priority": 3,
+      "severity": "info",
+      "scope": "crash",
+      "match": [
+        { "type": "contains", "value": "\tBlock location: World:" },
+        { "type": "contains", "value": "\tBlock: Block{" }
+      ],
+      "title": "崩溃和特定方块有关",
+      "message": "崩溃报告包含方块定位信息。可先在新存档验证，确认是否为地图或方块数据损坏。",
+      "actions": []
+    },
+    {
+      "id": "CRASH_ENTITY_LOCATION",
+      "priority": 3,
+      "severity": "info",
+      "scope": "crash",
+      "match": [
+        { "type": "contains", "value": "\tEntity's Exact location:" },
+        { "type": "contains", "value": "\tEntity Type:" }
+      ],
+      "title": "崩溃和特定实体有关",
+      "message": "崩溃报告包含实体信息。可尝试移除相关实体或回档排查。",
+      "actions": []
+    },
+    {
+      "id": "PIXEL_FORMAT_UNSUPPORTED",
+      "priority": 3,
+      "severity": "warn",
+      "scope": "all",
+      "match": [
+        { "type": "contains", "value": "Couldn't set pixel format" },
+        { "type": "contains", "value": "Pixel format not accelerated" }
+      ],
+      "title": "显卡像素格式设置失败",
+      "message": "图形驱动初始化失败。优先更新驱动并关闭远程桌面/虚拟显卡环境。",
+      "actions": []
+    }
+  ]
+}

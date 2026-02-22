@@ -16,18 +16,6 @@
   animation: modalZoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes loginAuroraShiftLeft {
-  0% { transform: translate3d(-6%, -2%, 0) scale(0.96); }
-  50% { transform: translate3d(4%, 3%, 0) scale(1.08); }
-  100% { transform: translate3d(-2%, -4%, 0) scale(1); }
-}
-
-@keyframes loginAuroraShiftRight {
-  0% { transform: translate3d(4%, 4%, 0) scale(1.05); }
-  50% { transform: translate3d(-6%, -3%, 0) scale(0.94); }
-  100% { transform: translate3d(2%, 2%, 0) scale(1); }
-}
-
 @keyframes loginPanelIn {
   from { opacity: 0; transform: translateY(24px) scale(0.965); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -45,31 +33,6 @@
 
 .login-page {
   isolation: isolate;
-}
-
-.login-page::before,
-.login-page::after {
-  content: "";
-  position: absolute;
-  width: clamp(300px, 44vw, 560px);
-  aspect-ratio: 1;
-  pointer-events: none;
-  z-index: 0;
-  filter: blur(56px);
-}
-
-.login-page::before {
-  top: -24%;
-  left: -18%;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0));
-  animation: loginAuroraShiftLeft 14s ease-in-out infinite;
-}
-
-.login-page::after {
-  right: -20%;
-  bottom: -32%;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.14), rgba(59, 130, 246, 0));
-  animation: loginAuroraShiftRight 16s ease-in-out infinite;
 }
 
 .login-panel {
@@ -147,8 +110,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .login-page::before,
-  .login-page::after,
   .login-panel,
   .login-stagger,
   .login-confirm-wrap,

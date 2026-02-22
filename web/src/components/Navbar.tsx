@@ -4,11 +4,10 @@ import {
   Server, User, LayoutDashboard, LogOut,
   Github, Menu, X, FileText
 } from 'lucide-react';
-import { useI18n } from '../i18n';
+import { t } from '../lib/text';
 
 export default function Navbar({ onNav, currentPage, token, onLogout }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { t } = useI18n();
 
   return (
     <nav className="glass sticky top-0 z-50 border-b border-white/10">

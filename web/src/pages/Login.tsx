@@ -4,7 +4,7 @@ import { Button } from '@/lib/ui';
 import { useToast } from '../components/ui/Toast';
 import { TURNSTILE_SITE_KEY } from '../config/api';
 import { login, register } from '../services/authService';
-import { useI18n } from '../i18n';
+import { t } from '../lib/text';
 
 const TURNSTILE_SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 
@@ -40,7 +40,6 @@ const isWeakPassword = (password) => {
 
 export default function Login({ onLogin }) {
     const toast = useToast();
-    const { t } = useI18n();
     const [isRegister, setIsRegister] = useState(false);
     const [form, setForm] = useState({ username: '', password: '', confirmPassword: '' });
     const [error, setError] = useState(null);
@@ -297,13 +296,16 @@ export default function Login({ onLogin }) {
                             )}
 
                             <Button
+                                color="primary"
+                                variant="solid"
+                                fullWidth
                                 onPress={submit}
                                 isLoading={loading}
                                 isDisabled={loading || turnstileLoading || !form.username || !form.password || !turnstileToken || (isRegister && (!form.confirmPassword || passwordsMismatch))}
-                                className="mt-4 h-12 w-full page-button-primary px-4 text-sm font-semibold login-stagger login-stagger-5 inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                endContent={<ArrowRight size={16} className="opacity-60" />}
+                                className="mt-4 h-12 text-sm font-semibold login-stagger login-stagger-5"
                             >
-                                <span>{isRegister ? t('login.createAccount') : t('login.signIn')}</span>
-                                <ArrowRight size={16} className="opacity-70" />
+                                {isRegister ? t('login.createAccount') : t('login.signIn')}
                             </Button>
                         </div>
 

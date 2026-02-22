@@ -111,7 +111,7 @@ const ToastItem = ({ message, type, closing, onClose }) => {
 
   return (
     <div
-      className={`pointer-events-auto relative overflow-hidden w-[320px] sm:w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border bg-[#111119]/95 backdrop-blur-lg shadow-xl transform-gpu will-change-transform ${m.border} transition-all duration-300 ${isVisible ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 translate-x-2 scale-[0.98]'}`}
+      className={`pointer-events-auto relative overflow-hidden w-[320px] sm:w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border bg-[#111119]/95 shadow-xl transform-gpu will-change-transform ${m.border} transition-all duration-300 ${isVisible ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 translate-x-2 scale-[0.98]'}`}
     >
       <div className="relative flex items-start gap-3 px-4 py-3">
         <div className={`mt-0.5 w-9 h-9 rounded-xl flex items-center justify-center border ${m.iconBg}`}>

@@ -12,13 +12,12 @@ import IssuesPanel from '../components/IssuesPanel';
 import { API_BASE_URL } from '../config/api';
 import { listProjectLogs, listProjects } from '../services/dashboardService';
 import { ApiError } from '../services/http';
-import { useI18n } from '../i18n';
+import { t } from '../lib/text';
 
 const API_URL = `${API_BASE_URL}/dashboard`;
 
 export default function Dashboard({ token, onView, onAuthError, animateOnEntry = false }) {
     const toast = useToast();
-    const { t } = useI18n();
     const [projects, setProjects] = useState([]);
     const [activeProject, setActiveProject] = useState(null);
     const [logs, setLogs] = useState([]);
@@ -904,7 +903,7 @@ function Modal({ isOpen, onClose, title, children }) {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}></div>
+            <div className="absolute inset-0 bg-black/60 animate-fade-in" onClick={onClose}></div>
             <div className="relative w-full max-w-md bg-[#111119] border border-white/10 rounded-2xl shadow-2xl p-6 animate-slide-up">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-bold text-white tracking-tight">{title}</h3>
