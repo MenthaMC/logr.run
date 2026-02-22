@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '@heroui/react';
+import { Button } from '@/lib/ui';
 import { AlertTriangle, Info, Tags, BarChart3 } from 'lucide-react';
 
 function Badge({ children }) {
@@ -13,7 +13,7 @@ function Badge({ children }) {
 export default function LogAnalysisPanel({ analysis, onJumpToLine }) {
   if (!analysis) {
     return (
-      <aside className="w-[360px] h-full shrink-0 border-l border-white/10 bg-[#0b0b12] p-4">
+      <aside className="w-[360px] h-full shrink-0 border-l border-white/10 bg-[#0a0b0d] p-4">
         <div className="glass-card rounded-2xl p-4 text-sm text-zinc-400">
           暂无分析数据
         </div>
@@ -27,7 +27,7 @@ export default function LogAnalysisPanel({ analysis, onJumpToLine }) {
   const hints = Array.isArray(analysis.hints) ? analysis.hints : [];
 
   return (
-    <aside className="w-[360px] h-full shrink-0 border-l border-white/10 bg-[#0b0b12] overflow-y-auto custom-scrollbar">
+    <aside className="w-[360px] h-full shrink-0 border-l border-white/10 bg-[#0a0b0d] overflow-y-auto custom-scrollbar">
       <div className="p-4 space-y-3">
         <div className="glass-card rounded-2xl p-4">
           <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">

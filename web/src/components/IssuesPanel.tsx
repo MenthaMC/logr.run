@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button } from '@heroui/react';
+import { Button } from '@/lib/ui';
 import { AlertTriangle, Bug, Search, X, Copy, Loader2 } from 'lucide-react';
 import { AreaChart, Area, Tooltip, ResponsiveContainer, XAxis } from 'recharts';
 import { useToast } from './ui/Toast';
@@ -199,14 +199,14 @@ export default function IssuesPanel({ token, activeProject, onView, onAuthError 
       </div>
 
       <div className="bg-[#0f0f16] border border-white/10 rounded-2xl overflow-hidden flex-1 min-h-0 flex flex-col">
-        <div className="grid grid-cols-12 gap-4 px-4 py-3 md:px-6 bg-[#0b0b12] border-b border-white/10 text-[11px] font-bold text-zinc-400 uppercase tracking-wider shrink-0">
+        <div className="grid grid-cols-12 gap-4 px-4 py-3 md:px-6 bg-[#0a0b0d] border-b border-white/10 text-[11px] font-bold text-zinc-400 uppercase tracking-wider shrink-0">
           <div className="col-span-1">{t('issues.level')}</div>
           <div className="col-span-7">{t('issues.colTitle')}</div>
           <div className="col-span-2 text-right">{t('issues.colCount')}</div>
           <div className="col-span-2 text-right">{t('issues.colLastSeen')}</div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-[#0b0b12]">
+        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-[#0a0b0d]">
           {loading ? (
             <div className="flex items-center justify-center py-12 text-zinc-500">
               <Loader2 className="animate-spin" size={18} />
@@ -254,7 +254,7 @@ export default function IssuesPanel({ token, activeProject, onView, onAuthError 
             className="absolute inset-0 bg-black/60 modal-backdrop-animate"
             onClick={() => setDrawerOpen(false)}
           />
-          <div className="absolute right-0 top-0 h-full w-full sm:w-[540px] bg-[#0b0b12] border-l border-white/10 modal-panel-animate flex flex-col">
+          <div className="absolute right-0 top-0 h-full w-full sm:w-[540px] bg-[#0a0b0d] border-l border-white/10 modal-panel-animate flex flex-col">
             <div className="p-4 border-b border-white/10 flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">

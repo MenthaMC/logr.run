@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { Button } from '@heroui/react';
+import { Button } from '@/lib/ui';
 import { useToast } from '../components/ui/Toast';
 import { TURNSTILE_SITE_KEY } from '../config/api';
 import { login, register } from '../services/authService';
@@ -196,8 +196,8 @@ export default function Login({ onLogin }) {
         <div className="login-page page-shell flex-1 h-full relative overflow-hidden">
             <div className="absolute inset-0 overflow-y-auto overflow-x-hidden custom-scrollbar">
                 <div className="min-h-full flex items-center justify-center p-4 sm:p-6">
-                    <div className="w-full max-w-[400px] page-card p-6 sm:p-8 z-10 relative my-8">
-                        <div className="text-center mb-8">
+                    <div key={isRegister ? 'register' : 'login'} className="login-panel w-full max-w-[400px] page-card p-6 sm:p-8 z-10 relative my-8">
+                        <div className="text-center mb-8 login-stagger login-stagger-1">
                             <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">
                                 {isRegister ? t('login.createAccount') : t('login.welcomeBack')}
                             </h1>
@@ -207,7 +207,7 @@ export default function Login({ onLogin }) {
                         </div>
 
                         <div className="space-y-5">
-                            <div className="space-y-1.5">
+                            <div className="space-y-1.5 login-stagger login-stagger-2">
                                 <label className="text-xs font-bold text-zinc-500 uppercase ml-1">{t('login.username')}</label>
                                 <input
                                     className="w-full bg-white/[0.02] border border-white/10 rounded-xl px-4 py-3 text-base sm:text-sm text-white placeholder:text-zinc-500 focus:border-white/25 focus:ring-1 focus:ring-white/10 outline-none transition"
@@ -220,7 +220,7 @@ export default function Login({ onLogin }) {
                                 />
                             </div>
 
-                            <div className="space-y-1.5">
+                            <div className="space-y-1.5 login-stagger login-stagger-3">
                                 <label className="text-xs font-bold text-zinc-500 uppercase ml-1">
                                     {t('login.password')}
                                 </label>
@@ -248,7 +248,7 @@ export default function Login({ onLogin }) {
                             </div>
 
                             {isRegister && (
-                                <div className="space-y-1.5">
+                                <div className="space-y-1.5 login-confirm-wrap">
                                     <label className="text-xs font-bold text-zinc-500 uppercase ml-1">{t('login.confirmPassword')}</label>
                                     <div className="relative">
                                         <input
@@ -281,7 +281,7 @@ export default function Login({ onLogin }) {
                                 </div>
                             )}
 
-                            <div className="flex flex-col gap-2 w-full pt-2">
+                            <div className="flex flex-col gap-2 w-full pt-2 login-stagger login-stagger-4">
                                 <div className="flex justify-center items-center">
                                     <div ref={turnstileRef} />
                                 </div>
@@ -297,20 +297,17 @@ export default function Login({ onLogin }) {
                             )}
 
                             <Button
-                                color="primary"
-                                variant="solid"
-                                fullWidth
                                 onPress={submit}
                                 isLoading={loading}
                                 isDisabled={loading || turnstileLoading || !form.username || !form.password || !turnstileToken || (isRegister && (!form.confirmPassword || passwordsMismatch))}
-                                endContent={<ArrowRight size={16} className="opacity-60" />}
-                                className="mt-4 h-12 text-sm font-semibold"
+                                className="mt-4 h-12 w-full page-button-primary px-4 text-sm font-semibold login-stagger login-stagger-5 inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isRegister ? t('login.createAccount') : t('login.signIn')}
+                                <span>{isRegister ? t('login.createAccount') : t('login.signIn')}</span>
+                                <ArrowRight size={16} className="opacity-70" />
                             </Button>
                         </div>
 
-                        <div className="mt-8 text-center pt-6 border-t border-white/5">
+                        <div className="mt-8 text-center pt-6 border-t border-white/5 login-stagger login-stagger-6">
                             <Button
                                 variant="light"
                                 size="sm"

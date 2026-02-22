@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '@heroui/react';
+import { Button } from '@/lib/ui';
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -19,7 +19,7 @@ export default class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="h-full w-full flex flex-col items-center justify-center bg-[#0b0b12] text-zinc-300 p-6">
+        <div className="h-full w-full flex flex-col items-center justify-center bg-[#0a0b0d] text-zinc-300 p-6">
           <div className="page-card w-full max-w-2xl p-6 sm:p-8">
             <h1 className="text-2xl font-bold mb-4 text-white">页面发生错误</h1>
             <div className="bg-black/40 p-4 rounded-xl font-mono text-sm mb-6 border border-red-500/25">

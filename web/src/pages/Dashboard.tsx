@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Button } from '@heroui/react';
+import { Button } from '@/lib/ui';
 import { 
     Plus, Copy, Search, Trash2, Box, AlertTriangle, 
     Check, Loader2, Server, Ghost, Edit2, X, 
@@ -16,7 +16,7 @@ import { useI18n } from '../i18n';
 
 const API_URL = `${API_BASE_URL}/dashboard`;
 
-export default function Dashboard({ token, onView, onAuthError }) {
+export default function Dashboard({ token, onView, onAuthError, animateOnEntry = false }) {
     const toast = useToast();
     const { t } = useI18n();
     const [projects, setProjects] = useState([]);
@@ -430,9 +430,9 @@ export default function Dashboard({ token, onView, onAuthError }) {
     };
 
     return (
-        <div className="page-shell flex flex-col md:flex-row min-h-full w-full font-sans text-zinc-200">
+        <div className={`dashboard-page page-shell flex flex-col md:flex-row min-h-full w-full font-sans text-zinc-200 ${animateOnEntry ? 'dashboard-page-enter' : ''}`}>
             
-            <div className="w-full md:w-64 flex flex-col border-b md:border-b-0 md:border-r border-white/10 shrink-0 h-auto md:h-[calc(100vh-64px)] md:sticky md:top-0 z-20 bg-[#0b0b12]">
+            <div className="dashboard-pane-left w-full md:w-64 flex flex-col border-b md:border-b-0 md:border-r border-white/10 shrink-0 h-auto md:h-[calc(100vh-64px)] md:sticky md:top-0 z-20 bg-[#0a0b0d]">
                 <div className="p-4 md:p-6 flex-1 flex flex-col min-h-0">
                     <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-4 px-2 flex justify-between items-center shrink-0">
                         <span>项目列表</span>
@@ -479,10 +479,10 @@ export default function Dashboard({ token, onView, onAuthError }) {
                 </div>
             </div>
 
-            <div className="flex-1 bg-[#0b0b12] flex flex-col min-w-0 h-full relative overflow-y-auto">
+            <div className="dashboard-pane-right flex-1 bg-[#0a0b0d] flex flex-col min-w-0 h-full relative overflow-y-auto">
                 
                 {activeProject ? (
-                    <div className="flex flex-col min-h-full relative pb-8">
+                    <div className="dashboard-pane-section flex flex-col min-h-full relative pb-8">
                         <header className="px-4 py-4 md:px-8 md:py-6 flex flex-col xl:flex-row xl:items-center justify-between gap-6 shrink-0">
                             <div>
                                 <h1 className="text-2xl font-bold text-white tracking-tight mb-2 flex items-center gap-3">
@@ -635,14 +635,14 @@ export default function Dashboard({ token, onView, onAuthError }) {
                                             <Button 
                                                 onClick={() => handleBatchVisibility(true)}
                                                 disabled={isBatchProcessing}
-                                                className="px-3 py-1.5 bg-[#0b0b12] border border-white/15 hover:border-emerald-500/50 text-zinc-200/90 hover:text-emerald-300 rounded-lg text-xs transition flex items-center gap-2"
+                                                className="px-3 py-1.5 bg-[#0a0b0d] border border-white/15 hover:border-emerald-500/50 text-zinc-200/90 hover:text-emerald-300 rounded-lg text-xs transition flex items-center gap-2"
                                             >
                                                 <Globe size={14} /> 设为公开
                                             </Button>
                                             <Button 
                                                 onClick={() => handleBatchVisibility(false)}
                                                 disabled={isBatchProcessing}
-                                                className="px-3 py-1.5 bg-[#0b0b12] border border-white/15 hover:border-emerald-500/50 text-zinc-200/90 hover:text-emerald-300 rounded-lg text-xs transition flex items-center gap-2"
+                                                className="px-3 py-1.5 bg-[#0a0b0d] border border-white/15 hover:border-emerald-500/50 text-zinc-200/90 hover:text-emerald-300 rounded-lg text-xs transition flex items-center gap-2"
                                             >
                                                 <Lock size={14} /> 设为私有
                                             </Button>
@@ -657,7 +657,7 @@ export default function Dashboard({ token, onView, onAuthError }) {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="p-4 border-b border-white/10 flex flex-col md:flex-row items-stretch md:items-center gap-4 bg-[#0b0b12] shrink-0">
+                                    <div className="p-4 border-b border-white/10 flex flex-col md:flex-row items-stretch md:items-center gap-4 bg-[#0a0b0d] shrink-0">
                                         <div className="relative flex-1">
                                             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                                             <input
@@ -678,9 +678,9 @@ export default function Dashboard({ token, onView, onAuthError }) {
                                     </div>
                                 )}
 
-                                <div className="flex-1 min-h-0 overflow-x-auto custom-scrollbar bg-[#0b0b12] relative flex flex-col">
+                                <div className="flex-1 min-h-0 overflow-x-auto custom-scrollbar bg-[#0a0b0d] relative flex flex-col">
                                     <div className="min-w-[600px] md:min-w-[800px] flex flex-col flex-1">
-                                        <div className="grid grid-cols-12 gap-4 px-4 py-3 md:px-6 bg-[#0b0b12] border-b border-white/10 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                                        <div className="grid grid-cols-12 gap-4 px-4 py-3 md:px-6 bg-[#0a0b0d] border-b border-white/10 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
                                             <div className="col-span-1 flex items-center">
                                                 <Button onClick={toggleSelectAll} className="text-zinc-400 hover:text-zinc-200 transition">
                                                     {filteredLogs.length > 0 && selectedLogIds.size === filteredLogs.length ? <CheckSquare size={14} /> : <Square size={14} />}

@@ -16,6 +16,126 @@
   animation: modalZoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes loginAuroraShiftLeft {
+  0% { transform: translate3d(-6%, -2%, 0) scale(0.96); }
+  50% { transform: translate3d(4%, 3%, 0) scale(1.08); }
+  100% { transform: translate3d(-2%, -4%, 0) scale(1); }
+}
+
+@keyframes loginAuroraShiftRight {
+  0% { transform: translate3d(4%, 4%, 0) scale(1.05); }
+  50% { transform: translate3d(-6%, -3%, 0) scale(0.94); }
+  100% { transform: translate3d(2%, 2%, 0) scale(1); }
+}
+
+@keyframes loginPanelIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.965); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes loginFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes loginConfirmIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.login-page {
+  isolation: isolate;
+}
+
+.login-page::before,
+.login-page::after {
+  content: "";
+  position: absolute;
+  width: clamp(300px, 44vw, 560px);
+  aspect-ratio: 1;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(56px);
+}
+
+.login-page::before {
+  top: -24%;
+  left: -18%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0));
+  animation: loginAuroraShiftLeft 14s ease-in-out infinite;
+}
+
+.login-page::after {
+  right: -20%;
+  bottom: -32%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.14), rgba(59, 130, 246, 0));
+  animation: loginAuroraShiftRight 16s ease-in-out infinite;
+}
+
+.login-panel {
+  transform-origin: 50% 14%;
+  animation: loginPanelIn 0.56s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+.login-stagger {
+  opacity: 0;
+  animation: loginFadeUp 0.46s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.login-stagger-1 { animation-delay: 120ms; }
+.login-stagger-2 { animation-delay: 180ms; }
+.login-stagger-3 { animation-delay: 240ms; }
+.login-stagger-4 { animation-delay: 300ms; }
+.login-stagger-5 { animation-delay: 360ms; }
+.login-stagger-6 { animation-delay: 420ms; }
+
+.login-confirm-wrap {
+  animation: loginConfirmIn 0.28s ease-out both;
+}
+
+@keyframes dashboardPageIn {
+  from { opacity: 0; filter: saturate(0.88); }
+  to { opacity: 1; filter: saturate(1); }
+}
+
+@keyframes dashboardPaneLeftIn {
+  from { opacity: 0; transform: translateX(-18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes dashboardPaneRightIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dashboardSectionIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-page-enter {
+  animation: dashboardPageIn 0.42s ease-out both;
+}
+
+.dashboard-page-enter .dashboard-pane-left {
+  opacity: 0;
+  animation: dashboardPaneLeftIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
+  will-change: opacity, transform;
+}
+
+.dashboard-page-enter .dashboard-pane-right {
+  opacity: 0;
+  animation: dashboardPaneRightIn 0.56s cubic-bezier(0.16, 1, 0.3, 1) 130ms both;
+  will-change: opacity, transform;
+}
+
+.dashboard-page-enter .dashboard-pane-section {
+  opacity: 0;
+  animation: dashboardSectionIn 0.5s cubic-bezier(0.2, 0.9, 0.2, 1) 220ms both;
+  will-change: opacity, transform;
+}
+
 .login-page input::-webkit-outer-spin-button,
 .login-page input::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -24,4 +144,31 @@
 
 .login-page input[type=number] {
   -moz-appearance: textfield;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-page::before,
+  .login-page::after,
+  .login-panel,
+  .login-stagger,
+  .login-confirm-wrap,
+  .dashboard-page-enter,
+  .dashboard-page-enter .dashboard-pane-left,
+  .dashboard-page-enter .dashboard-pane-right,
+  .dashboard-page-enter .dashboard-pane-section {
+    animation: none !important;
+  }
+
+  .login-stagger {
+    opacity: 1;
+    transform: none;
+  }
+
+  .dashboard-page-enter .dashboard-pane-left,
+  .dashboard-page-enter .dashboard-pane-right,
+  .dashboard-page-enter .dashboard-pane-section {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
 }

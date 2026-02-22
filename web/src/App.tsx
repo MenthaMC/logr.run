@@ -30,6 +30,7 @@ export default function App() {
     const [logId, setLogId] = useState(() => getLogIdFromPath(window.location.pathname));
     const [initialContent, setInitialContent] = useState("");
     const [token, setToken] = useState(localStorage.getItem('token'));
+    const [animateDashboardEntry, setAnimateDashboardEntry] = useState(false);
 
     useEffect(() => {
         const syncFromPath = (path) => {
@@ -75,6 +76,7 @@ export default function App() {
     const handleLogin = (t) => {
         localStorage.setItem('token', t);
         setToken(t);
+        setAnimateDashboardEntry(true);
         handleNav('dashboard', true);
     }
 
@@ -92,6 +94,7 @@ export default function App() {
 
     const handleNav = (target, replace = false) => {
         setPage(target);
+        if (target !== 'dashboard') setAnimateDashboardEntry(false);
         if (target === 'view') return;
         const pathMap = {
             home: '/',
@@ -108,6 +111,12 @@ export default function App() {
             window.history.pushState({}, '', nextPath);
         }
     }
+
+    useEffect(() => {
+        if (page !== 'dashboard' || !animateDashboardEntry) return;
+        const timer = window.setTimeout(() => setAnimateDashboardEntry(false), 900);
+        return () => window.clearTimeout(timer);
+    }, [page, animateDashboardEntry]);
 
     const handleViewSuccess = (id, content) => {
         setLogId(id);
@@ -143,7 +152,12 @@ export default function App() {
         if (page === 'dashboard') {
             return (
                 <div className="h-full overflow-y-auto custom-scrollbar">
-                    <Dashboard token={token} onView={handleDashboardView} onAuthError={handleAuthError} />
+                    <Dashboard
+                        token={token}
+                        onView={handleDashboardView}
+                        onAuthError={handleAuthError}
+                        animateOnEntry={animateDashboardEntry}
+                    />
                 </div>
             );
         }
@@ -154,7 +168,7 @@ export default function App() {
     return (
         <ToastProvider>
             <ConfirmProvider>
-                <div className="h-[100dvh] w-full flex flex-col font-sans bg-[#0b0b12] text-zinc-200 overflow-hidden selection:bg-emerald-500/30">
+                <div className="h-[100dvh] w-full flex flex-col font-sans bg-[#0a0b0d] text-zinc-200 overflow-hidden selection:bg-emerald-500/30">
                     <Navbar onNav={handleNav} currentPage={page} token={token} onLogout={handleLogout} />
 
                     <main className="flex-1 relative overflow-hidden flex flex-col">

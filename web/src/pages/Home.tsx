@@ -3,7 +3,7 @@ import {
   Upload, FileText, Terminal, X, Zap, AlertTriangle, Box, Shield, Code, Copy, Check,
   ArrowRight, Activity, Search, BarChart3
 } from 'lucide-react';
-import { Button } from '@heroui/react';
+import { Button } from '@/lib/ui';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL } from '../config/api';
 import { uploadLogContent, uploadLogFile } from '../services/logService';

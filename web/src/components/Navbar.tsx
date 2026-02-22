@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from '@heroui/react';
+import { Button } from '@/lib/ui';
 import {
   Server, User, LayoutDashboard, LogOut,
   Github, Menu, X, FileText

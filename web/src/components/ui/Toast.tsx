@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo, useState, useCallback, useRef, useEffect } from 'react';
-import { Button } from '@heroui/react';
+import { Button } from '@/lib/ui';
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 
 const ToastContext = createContext(null);

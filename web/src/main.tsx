@@ -1,6 +1,5 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { HeroUIProvider } from '@heroui/react'
 import '@fontsource/jetbrains-mono/400.css'
 import '@fontsource/jetbrains-mono/500.css'
 import '@fontsource/jetbrains-mono/700.css'
@@ -25,10 +24,8 @@ void preloadModuleByPath(window.location.pathname).catch(() => {})
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <HeroUIProvider>
-      <I18nProvider>
-        <App />
-      </I18nProvider>
-    </HeroUIProvider>
+    <I18nProvider>
+      <App />
+    </I18nProvider>
   </StrictMode>,
 )

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { Button } from '@heroui/react';
+import { Button } from '@/lib/ui';
 import { AlertTriangle, Info, CheckCircle2, X } from 'lucide-react';
 
 const ConfirmContext = createContext(null);

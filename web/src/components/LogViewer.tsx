@@ -5,11 +5,11 @@ import {
   ArrowUpToLine, ArrowDownToLine, List, FileQuestion, RefreshCw, Home,
   Search, ExternalLink, ChevronUp, ChevronDown, Globe, Lock
 } from 'lucide-react';
-import { Button } from '@heroui/react';
+import { Button } from '@/lib/ui';
 import { useToast } from './ui/Toast';
 import { ApiError } from '../services/http';
 import { buildRawLogUrl, getLogDetail, getRawLogText, updateLogVisibility } from '../services/logService';
-import LogAnalysisPanel from './LogAnalysisPanel';
+import AnalysisPanel from './AnalysisPanel';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export default function LogViewer({ id, initialContent, onBack, token }) {
@@ -278,7 +278,7 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
   };
 
   if (loading) return (
-    <div className="flex flex-col h-full w-full bg-[#0b0b12] font-mono text-sm overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-[#0a0b0d] font-mono text-sm overflow-hidden">
       <div className="h-16 border-b border-white/5 flex items-center px-6">
         <div className="w-8 h-8 rounded-lg bg-white/5 animate-pulse mr-4"></div>
         <div className="h-4 w-32 bg-white/5 rounded animate-pulse"></div>
@@ -301,7 +301,7 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
     : error;
 
   if (error) return (
-    <div className="h-full w-full flex flex-col items-center justify-center bg-[#0b0b12] text-zinc-300 gap-6 animate-fade-in">
+    <div className="h-full w-full flex flex-col items-center justify-center bg-[#0a0b0d] text-zinc-300 gap-6 animate-fade-in">
         <div className="relative">
             <div className="absolute inset-0 bg-red-500/10 blur-3xl rounded-full"></div>
             <div className="relative glass p-8 rounded-2xl shadow-2xl flex flex-col items-center">
@@ -338,7 +338,7 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
   );
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#0b0b12] font-mono text-sm text-zinc-200 overflow-hidden relative">
+    <div className="flex flex-col h-full w-full bg-[#0a0b0d] font-mono text-sm text-zinc-200 overflow-hidden relative">
       
       {metadata && (
         <header className="flex-none glass border-b border-white/5 z-30">
@@ -567,7 +567,7 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
                   >
                     {!isWrap && (
                       <>
-                        <div className="absolute inset-0 w-full h-full -z-20 bg-[#0b0b12]"></div>
+                        <div className="absolute inset-0 w-full h-full -z-20 bg-[#0a0b0d]"></div>
                         <div className={`absolute inset-0 w-full h-full -z-10 ${stickyBgClass}`}></div>
                       </>
                     )}
@@ -597,12 +597,12 @@ export default function LogViewer({ id, initialContent, onBack, token }) {
           <motion.div
             key="analysis-sidebar"
             initial={{ width: 0, opacity: 0, x: 24 }}
-            animate={{ width: 360, opacity: 1, x: 0 }}
+            animate={{ width: 380, opacity: 1, x: 0 }}
             exit={{ width: 0, opacity: 0, x: 24 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
             className="h-full shrink-0 overflow-hidden will-change-[width,opacity,transform]"
           >
-            <LogAnalysisPanel analysis={analysis} onJumpToLine={scrollToLine} />
+            <AnalysisPanel analysis={analysis} onJumpToLine={scrollToLine} />
           </motion.div>
         )}
       </AnimatePresence>
